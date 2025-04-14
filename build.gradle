@@ -11,7 +11,6 @@ buildscript {
         google()
         mavenCentral()
         gradlePluginPortal()
-        //集团默认仓库，其他的自己添加url
     }
     dependencies {
         classpath "com.android.tools.build:gradle:4.1.1"

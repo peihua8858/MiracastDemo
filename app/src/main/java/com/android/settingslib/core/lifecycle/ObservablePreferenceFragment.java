@@ -30,6 +30,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
@@ -42,7 +43,9 @@ public abstract class ObservablePreferenceFragment extends PreferenceFragmentCom
 
     private final Lifecycle mLifecycle = new Lifecycle(this);
 
-    public Lifecycle getSettingsLifecycle() {
+    @NonNull
+    @Override
+    public Lifecycle getLifecycle() {
         return mLifecycle;
     }
 

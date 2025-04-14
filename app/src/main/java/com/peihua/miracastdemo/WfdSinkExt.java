@@ -1,5 +1,6 @@
 package com.peihua.miracastdemo;
 
+import android.app.AppGlobals;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
