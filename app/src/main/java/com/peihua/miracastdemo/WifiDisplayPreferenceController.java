@@ -23,41 +23,16 @@ import android.media.MediaRouter.RouteInfo;
 import android.net.wifi.WifiManager;
 import android.text.TextUtils;
 
+import androidx.lifecycle.LifecycleObserver;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceScreen;
 
 import com.android.settings.core.BasePreferenceController;
-import com.android.settingslib.core.lifecycle.LifecycleObserver;
 import com.android.settingslib.core.lifecycle.events.OnStart;
 import com.android.settingslib.core.lifecycle.events.OnStop;
 
 public class WifiDisplayPreferenceController extends BasePreferenceController implements
         LifecycleObserver, OnStart, OnStop {
-    /**
-     * The setting is available, and searchable to all search clients.
-     */
-    public static final int AVAILABLE = 0;
-
-    /**
-     * The setting is available, but is not searchable to any search client.
-     */
-    public static final int AVAILABLE_UNSEARCHABLE = 1;
-    /**
-     * The setting is not, and will not supported by this device.
-     * <p>
-     * There is no guarantee that the setting page exists, and any links to the Setting should take
-     * you to the home page of Settings.
-     */
-    public static final int UNSUPPORTED_ON_DEVICE = 3;
-
-
-    /**
-     * The setting cannot be changed by the current user.
-     * <p>
-     * Links to the Setting should take you to the page of the Setting, even if it cannot be
-     * changed.
-     */
-    public static final int DISABLED_FOR_USER = 4;
 
     private final MediaRouter mRouter;
     private Preference mPreference;
