@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The ratio to use when using the two-pane settings layout -->
+    <item name="config_activity_embed_split_ratio" format="float" type="dimen">0.3636</item>
+</resources>

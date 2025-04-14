@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="wfd_resolution_entry">
+        <item>1080p 全高清 (适用于视频)</item>
+        <item>720p 高清 (适用于游戏)</item>
+    </string-array>
+</resources>

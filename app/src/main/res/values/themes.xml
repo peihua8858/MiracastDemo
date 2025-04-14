@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.MiracastDemo" parent="Theme.AppCompat.Light.NoActionBar" />
+
+    <style name="dialog_fullscreen">
+        <!--<item name="android:windowBackground">@android:drawable/screen_background_dark_transparent</item>-->
+        <item name="android:windowBackground">#000000</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+    </style>
+
+<!--     Material theme for the pages containing TabLayout and ViewPager -->
+    <style name="Theme.TabTheme" parent="@style/Theme.MaterialComponents.DayNight">
+<!--        <item name="colorPrimary">@*android:color/edge_effect_device_default_light</item>-->
+    </style>
+    <style name="SettingsLibTabsStyle" parent="Widget.Design.TabLayout">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+<!--        <item name="tabIndicatorColor">@color/colorPrimary</item>-->
+    </style>
+</resources>

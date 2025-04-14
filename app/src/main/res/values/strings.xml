@@ -1,0 +1,60 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">MiracastDemo</string>
+
+
+    <!-- MTK WFD start -->
+    <string name="wfd_change_resolution_menu_title">更改分辨率</string>
+    <string name="wfd_sink_summary">其他设备可检测到此设备</string>
+    <string name="wfd_device_category">设备列表</string>
+    <string name="wfd_sink_toast_enjoy">开始显示其他设备的投射屏幕</string>
+    <string name="wfd_sink_toast_disconnect">投射屏幕连接终止</string>
+    <string name="wfd_sink_disconnecting">正在断开连接…</string>
+    <string name="wfd_sink_guide_btn">我知道了</string>
+    <string name="wfd_sink_guide_title">如何退出投射画面?</string>
+    <string name="wfd_sink_guide_content">在屏幕上长按<xliff:g id="seconds">%s</xliff:g>秒即可退出其他设备投射屏幕的显示画面。</string>
+    <!-- MTK WFD end -->
+    <string name="wifi_display_settings_title" msgid="6451625615274960175">"投射"</string>
+    <string name="keywords_wifi_display_settings" msgid="5753883229564422679">"镜像"</string>
+    <string name="wifi_display_enable_menu_item" msgid="7391841780777318134">"开启无线显示"</string>
+    <string name="wifi_display_no_devices_found" msgid="7904877793677102805">"未在附近找到设备。"</string>
+    <string name="wifi_display_status_connecting" msgid="530880182560077334">"正在连接"</string>
+    <string name="wifi_display_status_connected" msgid="2189925211258519539">"已连接"</string>
+    <string name="wifi_display_status_in_use" msgid="5904009697167947449">"正在使用中"</string>
+    <string name="wifi_display_status_not_available" msgid="8463750208946968594">"无法使用"</string>
+    <string name="wifi_display_details" msgid="2351632307998142920">"显示设备设置"</string>
+    <string name="disconnected" msgid="3469373726996129247">"未连接"</string>
+    <string name="keywords_display_cast_screen" msgid="2572331770299149370">"投影, 投射, 屏幕镜像, 屏幕共享, 镜像, 共享屏幕, 屏幕投射"</string>
+    <string name="settings_button" msgid="2195468788019730377">"设置"</string>
+    <string name="wifi_display_options_name" msgid="8181334945680312228">"名称"</string>
+    <string name="cancel" msgid="5780102414089664898">"取消"</string>
+    <string name="okay" msgid="4827099303045669054">"确定"</string>
+    <string name="forget" msgid="3754013654135912783">"取消保存"</string>
+    <string name="save" msgid="3125033126936493822">"保存"</string>
+    <string name="done" msgid="7497982645646431310">"完成"</string>
+    <string name="apply" msgid="7834684883190163536">"应用"</string>
+    <string name="share" msgid="8502235338607613795">"分享"</string>
+    <string name="add" msgid="8335206931421683426">"添加"</string>
+    <string name="settings_safetylegal_activity_loading" msgid="1757860124583063395">"正在加载..."</string>
+    <string name="copyable_slice_toast" msgid="1008251852798990606">"<xliff:g id="COPY_CONTENT">%1$s</xliff:g>已复制到剪贴板。"</string>
+
+
+    <string name="wifi_display_operating_channel" translatable="false">Operating channel</string>
+    <string name="wifi_display_listen_channel" translatable="false">Listen channel</string>
+    <string name="wifi_display_wps_config" translatable="false">WPS configuration</string>
+    <string name="wifi_display_autonomous_go" translatable="false">Enable autonomous GO</string>
+    <string name="wifi_display_listen_mode" translatable="false">Enable listen mode</string>
+    <string name="wifi_display_session_info" translatable="false">Session info</string>
+    <string name="wifi_display_certification_heading" translatable="false">Certification</string>
+    <string name="wifi_display_options_title">Wireless display options</string>
+    <!-- Wifi Display settings. Options dialog.  The done button text. [CHAR LIMIT=20] -->
+    <string name="wifi_display_options_done">Done</string>
+    <!-- Wifi Display settings. Options dialog.  The forget button text. [CHAR LIMIT=20] -->
+    <string name="wifi_display_options_forget">Forget</string>
+    <string name="wifi_display_resume" translatable="false">Resume</string>
+    <string name="wifi_display_pause" translatable="false">Pause</string>
+
+    <string name="help_uri_default" translatable="false"></string>
+
+
+    <string name="config_featureFactory" translatable="false">com.android.settings.overlay.FeatureFactoryImpl</string>
+</resources>
