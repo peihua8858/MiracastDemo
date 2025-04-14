@@ -1,0 +1,76 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+//plugins {
+//alias(libs.plugins.android.application) apply false
+//    alias(libs.plugins.kotlin.android) apply false
+//    alias(libs.plugins.kotlin.compose) apply false
+//}
+
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        //集团默认仓库，其他的自己添加url
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:4.1.1"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+         mavenCentral()
+        maven{url="https://jitpack.io"}
+    }
+
+//    String path = getRootDir().getAbsolutePath() + '/libs/framework-111.jar'
+//    String path_header = getRootDir().getAbsolutePath() + '/libs/framework_header.jar'
+//    gradle.projectsEvaluated {
+//        tasks.withType(JavaCompile) {
+//            println("[" + path + ";" + path_header + "]")
+//            options.compilerArgs << '-Xbootclasspath/p:' + path + ";" + path_header
+//            List<File> newFileList = new ArrayList<>();
+//            newFileList.add(new File(path))
+//            newFileList.add(new File(path_header))
+//            FileCollection collection = options.bootstrapClasspath
+//            if (collection != null) {
+//                Set<File> fileSet = collection.getFiles()
+//                println(">>>>>fileSet:" + fileSet)
+//                newFileList.addAll(fileSet)
+//            } else {
+//                def sdkDir = System.getenv("ANDROID_HOME")
+//                if (sdkDir != null) {
+//                    newFileList.add(new File(sdkDir + "/platforms/android-33/android.jar"))
+//                }
+//            }
+//            println(">>>>>newFileList:" + newFileList)
+//            options.bootstrapClasspath = files(newFileList.toArray())
+//            println(">>>>>options.bootstrapClasspath:" + options.bootstrapClasspath.getFiles())
+//        }
+//    }
+
+
+    String path = getRootDir().getAbsolutePath() + '/libs/framework-111.jar'
+    String path_header = getRootDir().getAbsolutePath() + '/libs/framework_header.jar'
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            println(path)
+            options.compilerArgs << '-Xbootclasspath/p:' + path + ";" + path_header
+            Set<File> fileSet = options.bootstrapClasspath.getFiles()
+            List<File> newFileList = new ArrayList<>();
+            newFileList.add(new File(path))
+            newFileList.add(new File(path_header))
+            newFileList.addAll(fileSet)
+            options.bootstrapClasspath = files(newFileList.toArray())
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

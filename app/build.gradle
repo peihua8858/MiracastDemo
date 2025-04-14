@@ -1,0 +1,87 @@
+//plugins {
+//    alias(libs.plugins.android.application)
+//    alias(libs.plugins.kotlin.android)
+//    alias(libs.plugins.kotlin.compose)
+//}
+plugins {
+    id 'com.android.application'
+    alias(libs.plugins.kotlin.android)
+//    alias(libs.plugins.kotlin.compose)
+}
+android {
+//    namespace 'com.peihua.miracastdemo'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.peihua.miracastdemo"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    signingConfigs {
+
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.TmallSignSystem
+        }
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.TmallSignSystem
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+//    buildFeatures {
+//        compose true
+//    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+}
+
+dependencies {
+
+    implementation files('../libs/contextualcards.aar')
+//    compileOnly files('../libs/framework.jar')
+//    compileOnly files('../libs/framework111.jar')
+    compileOnly files('../libs/framework-111.jar')
+    compileOnly files('../libs/framework_header.jar')
+    compileOnly files('../libs/mediatek-framework.jar')
+//    implementation libs.androidx.core.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.lifecycle.runtime.ktx
+    implementation libs.material
+//    implementation libs.androidx.activity.compose
+//    implementation platform(libs.androidx.compose.bom)
+//    implementation libs.androidx.ui
+//    implementation libs.androidx.ui.graphics
+//    implementation libs.androidx.ui.tooling.preview
+//    implementation libs.androidx.material3
+//    testImplementation libs.junit
+//    androidTestImplementation libs.androidx.junit
+//    androidTestImplementation libs.androidx.espresso.core
+//    androidTestImplementation platform(libs.androidx.compose.bom)
+//    androidTestImplementation libs.androidx.ui.test.junit4
+//    debugImplementation libs.androidx.ui.tooling
+//    debugImplementation libs.androidx.ui.test.manifest
+
+    implementation 'androidx.preference:preference:1.2.1'
+    // https://mvnrepository.com/artifact/androidx.slice/slice-core
+    implementation("androidx.slice:slice-core:1.0.0")
+}
