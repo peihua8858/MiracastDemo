@@ -22,7 +22,12 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
-
+        TmallSignSystem {
+            storeFile file(new File("../jks/platform.jks"))
+            storePassword 'ktc123'
+            keyAlias '8195'
+            keyPassword 'ktc123'
+        }
     }
     buildTypes {
         release {

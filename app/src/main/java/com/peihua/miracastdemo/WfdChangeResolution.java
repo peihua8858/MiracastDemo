@@ -141,6 +141,8 @@ public class WfdChangeResolution {
                         ActivityEmbeddingUtils.setOrientationSettings(mOrientationSettings);
                         ActivityEmbeddingUtils.setIsSplitEnabled(false);
                         Settings.System.putInt(mContext.getContentResolver(), Settings.System.USER_ROTATION, 1);
+//                        mDisplayManager.enableSink(true);
+//                        WifiSinkDisplayManager.getInstance().onStart((Activity) mContext);
                         return false;
                     }
                 });

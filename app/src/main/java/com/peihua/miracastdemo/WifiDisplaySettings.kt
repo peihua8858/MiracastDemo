@@ -13,58 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.peihua.miracastdemo
 
-package com.peihua.miracastdemo;
-
-import android.app.settings.SettingsEnums;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.database.ContentObserver;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.WifiDisplay;
-import android.hardware.display.WifiDisplayStatus;
-import android.media.MediaRouter;
-import android.media.MediaRouter.RouteInfo;
-import android.net.Uri;
-import android.net.wifi.WpsInfo;
-import android.net.wifi.p2p.WifiP2pManager;
-import android.net.wifi.p2p.WifiP2pManager.ActionListener;
-import android.net.wifi.p2p.WifiP2pManager.Channel;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.provider.Settings;
-import android.text.TextUtils;
-import android.util.Slog;
-import android.util.TypedValue;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.preference.ListPreference;
-import androidx.preference.Preference;
-import androidx.preference.Preference.OnPreferenceChangeListener;
-import androidx.preference.PreferenceCategory;
-import androidx.preference.PreferenceGroup;
-import androidx.preference.PreferenceScreen;
-import androidx.preference.PreferenceViewHolder;
-import androidx.preference.SwitchPreference;
-import androidx.preference.TwoStatePreference;
-
-import com.android.internal.app.MediaRouteDialogPresenter;
-import com.android.settingslib.core.lifecycle.ObservablePreferenceFragment;
+import android.annotation.SuppressLint
+import android.app.settings.SettingsEnums
+import android.content.BroadcastReceiver
+import android.content.ContentResolver
+import android.content.Context
+import android.content.DialogInterface
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.database.ContentObserver
+import android.hardware.display.DisplayManager
+import android.hardware.display.WifiDisplay
+import android.hardware.display.WifiDisplayStatus
+import android.media.MediaRouter
+import android.net.Uri
+import android.net.wifi.WpsInfo
+import android.net.wifi.p2p.WifiP2pManager
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import android.text.TextUtils
+import android.util.Slog
+import android.util.TypedValue
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
+import androidx.preference.ListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceGroup
+import androidx.preference.PreferenceScreen
+import androidx.preference.PreferenceViewHolder
+import androidx.preference.SwitchPreference
+import androidx.preference.TwoStatePreference
+import com.android.internal.app.MediaRouteDialogPresenter
+import com.android.settingslib.core.lifecycle.ObservablePreferenceFragment
 
 /**
  * The Settings screen for WifiDisplay configuration and connection management.
@@ -74,773 +69,793 @@ import com.android.settingslib.core.lifecycle.ObservablePreferenceFragment;
  * on the system.  In that case, the enable option will not be shown but other
  * remote display routes will continue to be made available.
  */
-public final class WifiDisplaySettings extends ObservablePreferenceFragment {
-    private static final String TAG = "WifiDisplaySettings";
-    private static final boolean DEBUG = false;
+class WifiDisplaySettings : ObservablePreferenceFragment() {
+    private val mHandler: Handler
 
-    private static final int MENU_ID_ENABLE_WIFI_DISPLAY = Menu.FIRST;
+    private var mRouter: MediaRouter? = null
+    private val mDisplayManager: DisplayManager by lazy {
+        requireContext().getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+    }
 
-    private static final int CHANGE_SETTINGS = 1 << 0;
-    private static final int CHANGE_ROUTES = 1 << 1;
-    private static final int CHANGE_WIFI_DISPLAY_STATUS = 1 << 2;
-    private static final int CHANGE_ALL = -1;
+    private var mStarted = false
+    private var mPendingChanges = 0
 
-    private static final int ORDER_CERTIFICATION = 1;
-    private static final int ORDER_CONNECTED = 2;
-    private static final int ORDER_AVAILABLE = 3;
-    private static final int ORDER_UNAVAILABLE = 4;
+    private var mWifiDisplayOnSetting = false
+    private var mWifiDisplayStatus: WifiDisplayStatus? = null
 
-    private final Handler mHandler;
-
-    private MediaRouter mRouter;
-    private DisplayManager mDisplayManager;
-
-    private boolean mStarted;
-    private int mPendingChanges;
-
-    private boolean mWifiDisplayOnSetting;
-    private WifiDisplayStatus mWifiDisplayStatus;
-
-    private TextView mEmptyView;
+    private val mEmptyView: TextView? = null
 
     /* certification */
-    private boolean mWifiDisplayCertificationOn;
-    private WifiP2pManager mWifiP2pManager;
-    private Channel mWifiP2pChannel;
-    private PreferenceGroup mCertCategory;
-    private boolean mListen;
-    private boolean mAutoGO;
-    private int mWpsConfig = WpsInfo.INVALID;
-    private int mListenChannel;
-    private int mOperatingChannel;
+    private var mWifiDisplayCertificationOn = false
+    private val mWifiP2pManager: WifiP2pManager by lazy { requireContext().getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager }
+    private var mWifiP2pChannel: WifiP2pManager.Channel? = null
+    private var mCertCategory: PreferenceGroup? = null
+    private var mListen = false
+    private var mAutoGO = false
+    private var mWpsConfig = WpsInfo.INVALID
+    private var mListenChannel = 0
+    private var mOperatingChannel = 0
 
-    /// M: Add for wfd change resolution
-    private WfdChangeResolution mWfdChangeResolution;
+    /** M: Add for wfd change resolution */
+    private var mWfdChangeResolution: WfdChangeResolution? = null
 
-    public WifiDisplaySettings() {
-        mHandler = new Handler();
-    }
+    val metricsCategory: Int
+        get() = SettingsEnums.WFD_WIFI_DISPLAY
 
-    public int getMetricsCategory() {
-        return SettingsEnums.WFD_WIFI_DISPLAY;
-    }
+    override fun onCreate(icicle: Bundle?) {
+        super.onCreate(icicle)
 
-    @Override
-    public void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
-
-        /// M: new mWfdChangeResolution for MTK WFD feature @{
+        /** M: new mWfdChangeResolution for MTK WFD feature @{ */
         if (FeatureOption.MTK_WFD_SUPPORT) {
-            mWfdChangeResolution = new WfdChangeResolution(getActivity());
+            mWfdChangeResolution = WfdChangeResolution(requireContext())
         }
-        /// M: @}
 
-        final Context context = getActivity();
-        mRouter = (MediaRouter) context.getSystemService(Context.MEDIA_ROUTER_SERVICE);
-        mRouter.setRouterGroupId(MediaRouter.MIRRORING_GROUP_ID);
-        mDisplayManager = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
-        mWifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
-        mWifiP2pChannel = mWifiP2pManager.initialize(context, Looper.getMainLooper(), null);
+        /** M: @} */
+        val context: Context = requireContext()
+        mRouter = context.getSystemService(Context.MEDIA_ROUTER_SERVICE) as MediaRouter
+        mRouter!!.setRouterGroupId(MediaRouter.MIRRORING_GROUP_ID)
+        mWifiP2pChannel = mWifiP2pManager.initialize(context, Looper.getMainLooper(), null)
 
-        setHasOptionsMenu(true);
+        setHasOptionsMenu(true)
     }
 
-    @Override
-    public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
-        addPreferencesFromResource(R.xml.wifi_display_settings);
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        addPreferencesFromResource(R.xml.wifi_display_settings)
     }
 
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
 
-//        mEmptyView = getView().findViewById(android.R.id.empty);
+        //        mEmptyView = getView().findViewById(android.R.id.empty);
 //        mEmptyView.setText(R.string.wifi_display_no_devices_found);
 //        setEmptyView(mEmptyView);
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        mStarted = true;
+    val contentResolver: ContentResolver?
+        get() = requireContext().contentResolver
 
-        final Context context = getActivity();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED);
-        context.registerReceiver(mReceiver, filter);
+    override fun onStart() {
+        super.onStart()
+        mStarted = true
 
-        context.getContentResolver().registerContentObserver(Settings.Global.getUriFor(
-                Settings.Global.WIFI_DISPLAY_ON), false, mSettingsObserver);
-        context.getContentResolver().registerContentObserver(Settings.Global.getUriFor(
-                Settings.Global.WIFI_DISPLAY_CERTIFICATION_ON), false, mSettingsObserver);
-        context.getContentResolver().registerContentObserver(Settings.Global.getUriFor(
-                Settings.Global.WIFI_DISPLAY_WPS_CONFIG), false, mSettingsObserver);
+        val context: Context = requireContext()
+        val filter = IntentFilter()
+        filter.addAction(DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED)
+        context.registerReceiver(mReceiver, filter)
 
-        mRouter.addCallback(MediaRouter.ROUTE_TYPE_REMOTE_DISPLAY, mRouterCallback,
-                MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+        context.contentResolver.registerContentObserver(
+            Settings.Global.getUriFor(
+                Settings.Global.WIFI_DISPLAY_ON
+            ), false, mSettingsObserver
+        )
+        context.contentResolver.registerContentObserver(
+            Settings.Global.getUriFor(
+                Settings.Global.WIFI_DISPLAY_CERTIFICATION_ON
+            ), false, mSettingsObserver
+        )
+        context.contentResolver.registerContentObserver(
+            Settings.Global.getUriFor(
+                Settings.Global.WIFI_DISPLAY_WPS_CONFIG
+            ), false, mSettingsObserver
+        )
 
-        update(CHANGE_ALL);
-        /// M: WFD sink support @{
+        mRouter!!.addCallback(
+            MediaRouter.ROUTE_TYPE_REMOTE_DISPLAY, mRouterCallback,
+            MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN
+        )
+
+        update(CHANGE_ALL)
+        /** M: WFD sink support @{ */
         if (mWfdChangeResolution != null) {
-            mWfdChangeResolution.onStart();
+            mWfdChangeResolution!!.onStart()
         }
-        /// @}
+        /** @}
+         */
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
-        mStarted = false;
+    override fun onStop() {
+        super.onStop()
+        mStarted = false
 
-        /// M: WFD sink support @{
+        /** M: WFD sink support @{ */
         if (mWfdChangeResolution != null) {
-            mWfdChangeResolution.onStop();
+            mWfdChangeResolution!!.onStop()
         }
-        /// @}
 
-        final Context context = getActivity();
-        context.unregisterReceiver(mReceiver);
+        /** @}
+         */
+        val context: Context = requireContext()
+        context.unregisterReceiver(mReceiver)
 
-        context.getContentResolver().unregisterContentObserver(mSettingsObserver);
+        context.contentResolver.unregisterContentObserver(mSettingsObserver)
 
-        mRouter.removeCallback(mRouterCallback);
+        mRouter!!.removeCallback(mRouterCallback)
 
-        unscheduleUpdate();
+        unscheduleUpdate()
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        if (mWifiDisplayStatus != null && mWifiDisplayStatus.getFeatureState()
-                != WifiDisplayStatus.FEATURE_STATE_UNAVAILABLE) {
-            MenuItem item = menu.add(Menu.NONE, MENU_ID_ENABLE_WIFI_DISPLAY, 0,
-                    R.string.wifi_display_enable_menu_item);
-            item.setCheckable(true);
-            item.setChecked(mWifiDisplayOnSetting);
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        if (mWifiDisplayStatus != null && (mWifiDisplayStatus!!.featureState
+                    != WifiDisplayStatus.FEATURE_STATE_UNAVAILABLE)
+        ) {
+            val item = menu.add(
+                Menu.NONE, MENU_ID_ENABLE_WIFI_DISPLAY, 0,
+                R.string.wifi_display_enable_menu_item
+            )
+            item.isCheckable = true
+            item.isChecked = mWifiDisplayOnSetting
         }
 
-        /// M: Call WfdChangeResolution create option menu function @{
+        /** M: Call WfdChangeResolution create option menu function @{ */
         if (mWfdChangeResolution != null) {
-            mWfdChangeResolution.onCreateOptionMenu(menu, mWifiDisplayStatus);
+            mWfdChangeResolution!!.onCreateOptionMenu(menu, mWifiDisplayStatus)
         }
-        /// M: @}
-        super.onCreateOptionsMenu(menu, inflater);
+        /** M: @} */
+        super.onCreateOptionsMenu(menu, inflater)
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case MENU_ID_ENABLE_WIFI_DISPLAY:
-                mWifiDisplayOnSetting = !item.isChecked();
-                item.setChecked(mWifiDisplayOnSetting);
-                Settings.Global.putInt(getContext().getContentResolver(),
-                        Settings.Global.WIFI_DISPLAY_ON, mWifiDisplayOnSetting ? 1 : 0);
-                return true;
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            MENU_ID_ENABLE_WIFI_DISPLAY -> {
+                mWifiDisplayOnSetting = !item.isChecked
+                item.isChecked = mWifiDisplayOnSetting
+                Settings.Global.putInt(
+                    contentResolver,
+                    Settings.Global.WIFI_DISPLAY_ON, if (mWifiDisplayOnSetting) 1 else 0
+                )
+                return true
+            }
         }
-        /// M: Call WfdChangeResolution option menu selected function @{
+        /** M: Call WfdChangeResolution option menu selected function @{ */
         if (mWfdChangeResolution != null &&
-                mWfdChangeResolution.onOptionMenuSelected(item, getFragmentManager())) {
-            return true;
+            mWfdChangeResolution!!.onOptionMenuSelected(item, parentFragmentManager)
+        ) {
+            return true
         } else {
-            return super.onOptionsItemSelected(item);
+            return super.onOptionsItemSelected(item)
         }
-        /// M: @}
+        /** M: @} */
     }
 
-    public static boolean isAvailable(Context context) {
-        return context.getSystemService(Context.DISPLAY_SERVICE) != null
-                && context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT)
-                && context.getSystemService(Context.WIFI_P2P_SERVICE) != null;
-    }
-
-    private void scheduleUpdate(int changes) {
+    private fun scheduleUpdate(changes: Int) {
         if (mStarted) {
             if (mPendingChanges == 0) {
-                mHandler.post(mUpdateRunnable);
+                mHandler.post(mUpdateRunnable)
             }
-            mPendingChanges |= changes;
+            mPendingChanges = mPendingChanges or changes
         }
     }
 
-    private void unscheduleUpdate() {
+    private fun unscheduleUpdate() {
         if (mPendingChanges != 0) {
-            mPendingChanges = 0;
-            mHandler.removeCallbacks(mUpdateRunnable);
+            mPendingChanges = 0
+            mHandler.removeCallbacks(mUpdateRunnable)
         }
     }
 
-    private void update(int changes) {
-        boolean invalidateOptions = false;
+    private fun update(changes: Int) {
+        var invalidateOptions = false
 
         // Update settings.
-        if ((changes & CHANGE_SETTINGS) != 0) {
-            mWifiDisplayOnSetting = Settings.Global.getInt(getContext().getContentResolver(),
-                    Settings.Global.WIFI_DISPLAY_ON, 0) != 0;
-            mWifiDisplayCertificationOn = Settings.Global.getInt(getContext().getContentResolver(),
-                    Settings.Global.WIFI_DISPLAY_CERTIFICATION_ON, 0) != 0;
-            mWpsConfig = Settings.Global.getInt(getContext().getContentResolver(),
-                    Settings.Global.WIFI_DISPLAY_WPS_CONFIG, WpsInfo.INVALID);
+        if ((changes and CHANGE_SETTINGS) != 0) {
+            mWifiDisplayOnSetting = Settings.Global.getInt(
+                contentResolver,
+                Settings.Global.WIFI_DISPLAY_ON, 0
+            ) != 0
+            mWifiDisplayCertificationOn = Settings.Global.getInt(
+                contentResolver,
+                Settings.Global.WIFI_DISPLAY_CERTIFICATION_ON, 0
+            ) != 0
+            mWpsConfig = Settings.Global.getInt(
+                contentResolver,
+                Settings.Global.WIFI_DISPLAY_WPS_CONFIG, WpsInfo.INVALID
+            )
 
             // The wifi display enabled setting may have changed.
-            invalidateOptions = true;
+            invalidateOptions = true
         }
 
         // Update wifi display state.
-        if ((changes & CHANGE_WIFI_DISPLAY_STATUS) != 0) {
-            mWifiDisplayStatus = mDisplayManager.getWifiDisplayStatus();
+        if ((changes and CHANGE_WIFI_DISPLAY_STATUS) != 0) {
+            mWifiDisplayStatus = mDisplayManager!!.wifiDisplayStatus
 
             // The wifi display feature state may have changed.
-            invalidateOptions = true;
+            invalidateOptions = true
         }
 
         // Rebuild the routes.
-        final PreferenceScreen preferenceScreen = getPreferenceScreen();
-        preferenceScreen.removeAll();
+        val preferenceScreen = getPreferenceScreen()
+        preferenceScreen.removeAll()
 
-        /// M: WFD sink support @{
-        PreferenceCategory category = null;
+        /** M: WFD sink support @{ */
+        var category: PreferenceCategory? = null
         if (mWfdChangeResolution != null) {
-            boolean added = mWfdChangeResolution.addAdditionalPreference(
+            val added = mWfdChangeResolution!!.addAdditionalPreference(
                 preferenceScreen, mWifiDisplayStatus != null
-                    && mWifiDisplayStatus.getFeatureState() == WifiDisplayStatus.FEATURE_STATE_ON);
+                        && mWifiDisplayStatus!!.featureState == WifiDisplayStatus.FEATURE_STATE_ON
+            )
             if (added) {
-                Preference pre = preferenceScreen
-                        .getPreference(preferenceScreen.getPreferenceCount() - 1);
-                if (pre != null && pre instanceof PreferenceCategory) {
-                    category = (PreferenceCategory) pre;
+                val pre = preferenceScreen
+                    .getPreference(preferenceScreen.preferenceCount - 1)
+                if (pre is PreferenceCategory) {
+                    category = pre
                 }
             }
-            if ((changes & CHANGE_WIFI_DISPLAY_STATUS) != 0) {
-                mWfdChangeResolution.handleWfdStatusChanged(mWifiDisplayStatus);
+            if ((changes and CHANGE_WIFI_DISPLAY_STATUS) != 0) {
+                mWfdChangeResolution!!.handleWfdStatusChanged(mWifiDisplayStatus)
             }
         }
-        /// @}
+
+        /** @}
+         */
 
         // Add all known remote display routes.
-        final int routeCount = mRouter.getRouteCount();
-        for (int i = 0; i < routeCount; i++) {
-            RouteInfo route = mRouter.getRouteAt(i);
+        val routeCount = mRouter!!.routeCount
+        for (i in 0 until routeCount) {
+            val route = mRouter!!.getRouteAt(i)
             if (route.matchesTypes(MediaRouter.ROUTE_TYPE_REMOTE_DISPLAY)) {
-                /// M: WFD sink support @{
+                /** M: WFD sink support @{ */
                 if (category == null) {
-                    preferenceScreen.addPreference(createRoutePreference(route));
+                    preferenceScreen.addPreference(createRoutePreference(route))
                 } else {
-                    category.addPreference(createRoutePreference(route));
+                    category.addPreference(createRoutePreference(route))
                 }
-                /// @}
+                /** @}
+                 */
             }
         }
 
         // Additional features for wifi display routes.
         if (mWifiDisplayStatus != null
-                && mWifiDisplayStatus.getFeatureState() == WifiDisplayStatus.FEATURE_STATE_ON) {
+            && mWifiDisplayStatus!!.featureState == WifiDisplayStatus.FEATURE_STATE_ON
+        ) {
             // Add all unpaired wifi displays.
-            for (WifiDisplay display : mWifiDisplayStatus.getDisplays()) {
-                if (!display.isRemembered() && display.isAvailable()
-                        && !display.equals(mWifiDisplayStatus.getActiveDisplay())) {
-                    /// M: WFD sink support @{
+            for (display in mWifiDisplayStatus!!.displays) {
+                if (!display.isRemembered && display.isAvailable
+                    && !display.equals(mWifiDisplayStatus!!.activeDisplay)
+                ) {
+                    /** M: WFD sink support @{ */
                     if (category == null) {
-                        preferenceScreen.addPreference(new UnpairedWifiDisplayPreference(
-                                getContext(), display));
+                        preferenceScreen.addPreference(
+                            UnpairedWifiDisplayPreference(
+                                requireContext(), display
+                            )
+                        )
                     } else {
-                        category.addPreference(new UnpairedWifiDisplayPreference(
-                                getContext(), display));
+                        category.addPreference(
+                            UnpairedWifiDisplayPreference(
+                                requireContext(), display
+                            )
+                        )
                     }
-                    /// @}
+                    /** @}
+                     */
                 }
             }
 
             // Add the certification menu if enabled in developer options.
             if (mWifiDisplayCertificationOn) {
-                buildCertificationMenu(preferenceScreen);
+                buildCertificationMenu(preferenceScreen)
             }
         }
 
         // Invalidate menu options if needed.
         if (invalidateOptions) {
-            getActivity().invalidateOptionsMenu();
+            requireActivity().invalidateOptionsMenu()
         }
     }
 
-    private RoutePreference createRoutePreference(RouteInfo route) {
-        WifiDisplay display = findWifiDisplay(route.getDeviceAddress());
+    private fun createRoutePreference(route: MediaRouter.RouteInfo): RoutePreference {
+        val display = findWifiDisplay(route.deviceAddress)
         if (display != null) {
-            return new WifiDisplayRoutePreference(getContext(), route, display);
+            return WifiDisplayRoutePreference(requireContext(), route, display)
         } else {
-            return new RoutePreference(getContext(), route);
+            return RoutePreference(requireContext(), route)
         }
     }
 
-    private WifiDisplay findWifiDisplay(String deviceAddress) {
+    private fun findWifiDisplay(deviceAddress: String?): WifiDisplay? {
         if (mWifiDisplayStatus != null && deviceAddress != null) {
-            for (WifiDisplay display : mWifiDisplayStatus.getDisplays()) {
-                if (display.getDeviceAddress().equals(deviceAddress)) {
-                    return display;
+            for (display in mWifiDisplayStatus!!.displays) {
+                if (display.deviceAddress == deviceAddress) {
+                    return display
                 }
             }
         }
-        return null;
+        return null
     }
 
-    private void buildCertificationMenu(final PreferenceScreen preferenceScreen) {
+    private fun buildCertificationMenu(preferenceScreen: PreferenceScreen) {
         if (mCertCategory == null) {
-            mCertCategory = new PreferenceCategory(getContext());
-            mCertCategory.setTitle(R.string.wifi_display_certification_heading);
-            mCertCategory.setOrder(ORDER_CERTIFICATION);
+            mCertCategory = PreferenceCategory(requireContext())
+            mCertCategory!!.setTitle(R.string.wifi_display_certification_heading)
+            mCertCategory!!.order = ORDER_CERTIFICATION
         } else {
-            mCertCategory.removeAll();
+            mCertCategory!!.removeAll()
         }
-        preferenceScreen.addPreference(mCertCategory);
+        preferenceScreen.addPreference(mCertCategory!!)
 
         // display session info if there is an active p2p session
-        if (!mWifiDisplayStatus.getSessionInfo().getGroupId().isEmpty()) {
-            Preference p = new Preference(getContext());
-            p.setTitle(R.string.wifi_display_session_info);
-            p.setSummary(mWifiDisplayStatus.getSessionInfo().toString());
-            mCertCategory.addPreference(p);
+        if (!mWifiDisplayStatus!!.sessionInfo.groupId.isEmpty()) {
+            val p = Preference(requireContext())
+            p.setTitle(R.string.wifi_display_session_info)
+            p.setSummary(mWifiDisplayStatus!!.sessionInfo.toString())
+            mCertCategory!!.addPreference(p)
 
             // show buttons for Pause/Resume when a WFD session is established
-            if (mWifiDisplayStatus.getSessionInfo().getSessionId() != 0) {
-                mCertCategory.addPreference(new Preference(getContext()) {
-                    @Override
-                    public void onBindViewHolder(PreferenceViewHolder view) {
-                        super.onBindViewHolder(view);
+            if (mWifiDisplayStatus!!.sessionInfo.sessionId != 0) {
+                mCertCategory!!.addPreference(object : Preference(requireContext()) {
+                    override fun onBindViewHolder(view: PreferenceViewHolder) {
+                        super.onBindViewHolder(view)
 
-                        Button b = (Button) view.findViewById(R.id.left_button);
-                        b.setText(R.string.wifi_display_pause);
-                        b.setOnClickListener(new OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                mDisplayManager.pauseWifiDisplay();
+                        var b = view.findViewById(R.id.left_button) as Button
+                        b.setText(R.string.wifi_display_pause)
+                        b.setOnClickListener(object : View.OnClickListener {
+                            override fun onClick(v: View?) {
+                                mDisplayManager.pauseWifiDisplay()
                             }
-                        });
+                        })
 
-                        b = (Button) view.findViewById(R.id.right_button);
-                        b.setText(R.string.wifi_display_resume);
-                        b.setOnClickListener(new OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                mDisplayManager.resumeWifiDisplay();
+                        b = view.findViewById(R.id.right_button) as Button
+                        b.setText(R.string.wifi_display_resume)
+                        b.setOnClickListener(object : View.OnClickListener {
+                            override fun onClick(v: View?) {
+                                mDisplayManager.resumeWifiDisplay()
                             }
-                        });
+                        })
                     }
-                });
-                mCertCategory.setLayoutResource(R.layout.two_buttons_panel);
+                })
+                mCertCategory!!.layoutResource = R.layout.two_buttons_panel
             }
         }
 
         // switch for Listen Mode
-        SwitchPreference pref = new SwitchPreference(getContext()) {
-            @Override
-            protected void onClick() {
-                mListen = !mListen;
-                setListenMode(mListen);
-                setChecked(mListen);
+        var pref: SwitchPreference = object : SwitchPreference(requireContext()) {
+            @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+            override fun onClick() {
+                mListen = !mListen
+                setListenMode(mListen)
+                setChecked(mListen)
             }
-        };
-        pref.setTitle(R.string.wifi_display_listen_mode);
-        pref.setChecked(mListen);
-        mCertCategory.addPreference(pref);
+        }
+        pref.setTitle(R.string.wifi_display_listen_mode)
+        pref.setChecked(mListen)
+        mCertCategory!!.addPreference(pref)
 
         // switch for Autonomous GO
-        pref = new SwitchPreference(getContext()) {
-            @Override
-            protected void onClick() {
-                mAutoGO = !mAutoGO;
+        pref = object : SwitchPreference(requireContext()) {
+            override fun onClick() {
+                mAutoGO = !mAutoGO
                 if (mAutoGO) {
-                    startAutoGO();
+                    startAutoGO()
                 } else {
-                    stopAutoGO();
+                    stopAutoGO()
                 }
-                setChecked(mAutoGO);
+                setChecked(mAutoGO)
             }
-        };
-        pref.setTitle(R.string.wifi_display_autonomous_go);
-        pref.setChecked(mAutoGO);
-        mCertCategory.addPreference(pref);
+        }
+        pref.setTitle(R.string.wifi_display_autonomous_go)
+        pref.setChecked(mAutoGO)
+        mCertCategory!!.addPreference(pref)
 
         // Drop down list for choosing WPS method (PBC/KEYPAD/DISPLAY)
-        ListPreference lp = new ListPreference(getContext());
-        lp.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object value) {
-                int wpsConfig = Integer.parseInt((String) value);
+        var lp = ListPreference(requireContext())
+        lp.onPreferenceChangeListener = object : Preference.OnPreferenceChangeListener {
+            override fun onPreferenceChange(preference: Preference, value: Any?): Boolean {
+                val wpsConfig = (value as String?)!!.toInt()
                 if (wpsConfig != mWpsConfig) {
-                    mWpsConfig = wpsConfig;
-                    getActivity().invalidateOptionsMenu();
-                    Settings.Global.putInt(getActivity().getContentResolver(),
-                            Settings.Global.WIFI_DISPLAY_WPS_CONFIG, mWpsConfig);
+                    mWpsConfig = wpsConfig
+                    requireActivity().invalidateOptionsMenu()
+                    Settings.Global.putInt(
+                        contentResolver,
+                        Settings.Global.WIFI_DISPLAY_WPS_CONFIG, mWpsConfig
+                    )
                 }
-                return true;
+                return true
             }
-        });
-        mWpsConfig = Settings.Global.getInt(getActivity().getContentResolver(),
-                Settings.Global.WIFI_DISPLAY_WPS_CONFIG, WpsInfo.INVALID);
-        String[] wpsEntries = {"Default", "PBC", "KEYPAD", "DISPLAY"};
-        String[] wpsValues = {
-                "" + WpsInfo.INVALID,
-                "" + WpsInfo.PBC,
-                "" + WpsInfo.KEYPAD,
-                "" + WpsInfo.DISPLAY};
-        lp.setKey("wps");
-        lp.setTitle(R.string.wifi_display_wps_config);
-        lp.setEntries(wpsEntries);
-        lp.setEntryValues(wpsValues);
-        lp.setValue("" + mWpsConfig);
-        lp.setSummary("%1$s");
-        mCertCategory.addPreference(lp);
+        }
+        mWpsConfig = Settings.Global.getInt(
+            contentResolver,
+            Settings.Global.WIFI_DISPLAY_WPS_CONFIG, WpsInfo.INVALID
+        )
+        val wpsEntries = arrayOf<String?>("Default", "PBC", "KEYPAD", "DISPLAY")
+        val wpsValues = arrayOf<String?>(
+            "" + WpsInfo.INVALID,
+            "" + WpsInfo.PBC,
+            "" + WpsInfo.KEYPAD,
+            "" + WpsInfo.DISPLAY
+        )
+        lp.setKey("wps")
+        lp.setTitle(R.string.wifi_display_wps_config)
+        lp.entries = wpsEntries
+        lp.entryValues = wpsValues
+        lp.setValue("" + mWpsConfig)
+        lp.setSummary("%1\$s")
+        mCertCategory!!.addPreference(lp)
 
         // Drop down list for choosing listen channel
-        lp = new ListPreference(getContext());
-        lp.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object value) {
-                int channel = Integer.parseInt((String) value);
+        lp = ListPreference(requireContext())
+        lp.onPreferenceChangeListener = object : Preference.OnPreferenceChangeListener {
+            override fun onPreferenceChange(preference: Preference, value: Any?): Boolean {
+                val channel = (value as String?)!!.toInt()
                 if (channel != mListenChannel) {
-                    mListenChannel = channel;
-                    getActivity().invalidateOptionsMenu();
-                    setWifiP2pChannels(mListenChannel, mOperatingChannel);
+                    mListenChannel = channel
+                    requireActivity().invalidateOptionsMenu()
+                    setWifiP2pChannels(mListenChannel, mOperatingChannel)
                 }
-                return true;
+                return true
             }
-        });
-        String[] lcEntries = {"Auto", "1", "6", "11"};
-        String[] lcValues = {"0", "1", "6", "11"};
-        lp.setKey("listening_channel");
-        lp.setTitle(R.string.wifi_display_listen_channel);
-        lp.setEntries(lcEntries);
-        lp.setEntryValues(lcValues);
-        lp.setValue("" + mListenChannel);
-        lp.setSummary("%1$s");
-        mCertCategory.addPreference(lp);
+        }
+        val lcEntries = arrayOf<String?>("Auto", "1", "6", "11")
+        val lcValues = arrayOf<String?>("0", "1", "6", "11")
+        lp.setKey("listening_channel")
+        lp.setTitle(R.string.wifi_display_listen_channel)
+        lp.entries = lcEntries
+        lp.entryValues = lcValues
+        lp.setValue("" + mListenChannel)
+        lp.setSummary("%1\$s")
+        mCertCategory!!.addPreference(lp)
 
         // Drop down list for choosing operating channel
-        lp = new ListPreference(getContext());
-        lp.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object value) {
-                int channel = Integer.parseInt((String) value);
+        lp = ListPreference(requireContext())
+        lp.onPreferenceChangeListener = object : Preference.OnPreferenceChangeListener {
+            override fun onPreferenceChange(preference: Preference, value: Any?): Boolean {
+                val channel = (value as String?)!!.toInt()
                 if (channel != mOperatingChannel) {
-                    mOperatingChannel = channel;
-                    getActivity().invalidateOptionsMenu();
-                    setWifiP2pChannels(mListenChannel, mOperatingChannel);
+                    mOperatingChannel = channel
+                    requireActivity().invalidateOptionsMenu()
+                    setWifiP2pChannels(mListenChannel, mOperatingChannel)
                 }
-                return true;
+                return true
             }
-        });
-        String[] ocEntries = {"Auto", "1", "6", "11", "36"};
-        String[] ocValues = {"0", "1", "6", "11", "36"};
-        lp.setKey("operating_channel");
-        lp.setTitle(R.string.wifi_display_operating_channel);
-        lp.setEntries(ocEntries);
-        lp.setEntryValues(ocValues);
-        lp.setValue("" + mOperatingChannel);
-        lp.setSummary("%1$s");
-        mCertCategory.addPreference(lp);
+        }
+        val ocEntries = arrayOf<String?>("Auto", "1", "6", "11", "36")
+        val ocValues = arrayOf<String?>("0", "1", "6", "11", "36")
+        lp.setKey("operating_channel")
+        lp.setTitle(R.string.wifi_display_operating_channel)
+        lp.entries = ocEntries
+        lp.entryValues = ocValues
+        lp.setValue("" + mOperatingChannel)
+        lp.setSummary("%1\$s")
+        mCertCategory!!.addPreference(lp)
     }
 
-    private void startAutoGO() {
+    private fun startAutoGO() {
         if (DEBUG) {
-            Slog.d(TAG, "Starting Autonomous GO...");
+            Slog.d(TAG, "Starting Autonomous GO...")
         }
-        mWifiP2pManager.createGroup(mWifiP2pChannel, new ActionListener() {
-            @Override
-            public void onSuccess() {
+        mWifiP2pManager.createGroup(mWifiP2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
                 if (DEBUG) {
-                    Slog.d(TAG, "Successfully started AutoGO.");
+                    Slog.d(TAG, "Successfully started AutoGO.")
                 }
             }
 
-            @Override
-            public void onFailure(int reason) {
-                Slog.e(TAG, "Failed to start AutoGO with reason " + reason + ".");
+            override fun onFailure(reason: Int) {
+                Slog.e(TAG, "Failed to start AutoGO with reason " + reason + ".")
             }
-        });
+        })
     }
 
-    private void stopAutoGO() {
+    private fun stopAutoGO() {
         if (DEBUG) {
-            Slog.d(TAG, "Stopping Autonomous GO...");
+            Slog.d(TAG, "Stopping Autonomous GO...")
         }
-        mWifiP2pManager.removeGroup(mWifiP2pChannel, new ActionListener() {
-            @Override
-            public void onSuccess() {
+        mWifiP2pManager.removeGroup(mWifiP2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
                 if (DEBUG) {
-                    Slog.d(TAG, "Successfully stopped AutoGO.");
+                    Slog.d(TAG, "Successfully stopped AutoGO.")
                 }
             }
 
-            @Override
-            public void onFailure(int reason) {
-                Slog.e(TAG, "Failed to stop AutoGO with reason " + reason + ".");
+            override fun onFailure(reason: Int) {
+                Slog.e(TAG, "Failed to stop AutoGO with reason $reason.")
             }
-        });
+        })
     }
 
-    private void setListenMode(final boolean enable) {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun setListenMode(enable: Boolean) {
         if (DEBUG) {
-            Slog.d(TAG, "Setting listen mode to: " + enable);
+            Slog.d(TAG, "Setting listen mode to: $enable")
         }
-        final ActionListener listener = new ActionListener() {
-            @Override
-            public void onSuccess() {
+        val listener: WifiP2pManager.ActionListener = object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
                 if (DEBUG) {
-                    Slog.d(TAG, "Successfully " + (enable ? "entered" : "exited")
-                            + " listen mode.");
+                    Slog.d(
+                        TAG, ("Successfully " + (if (enable) "entered" else "exited")
+                                + " listen mode.")
+                    )
                 }
             }
 
-            @Override
-            public void onFailure(int reason) {
-                Slog.e(TAG, "Failed to " + (enable ? "entered" : "exited")
-                        + " listen mode with reason " + reason + ".");
+            override fun onFailure(reason: Int) {
+                Slog.e(
+                    TAG, ("Failed to " + (if (enable) "entered" else "exited")
+                            + " listen mode with reason " + reason + ".")
+                )
             }
-        };
+        }
         if (enable) {
-            mWifiP2pManager.startListening(mWifiP2pChannel, listener);
+            mWifiP2pManager.startListening(mWifiP2pChannel!!, listener)
         } else {
-            mWifiP2pManager.stopListening(mWifiP2pChannel, listener);
+            mWifiP2pManager.stopListening(mWifiP2pChannel!!, listener)
         }
     }
 
-    private void setWifiP2pChannels(final int lc, final int oc) {
+    private fun setWifiP2pChannels(lc: Int, oc: Int) {
         if (DEBUG) {
-            Slog.d(TAG, "Setting wifi p2p channel: lc=" + lc + ", oc=" + oc);
+            Slog.d(TAG, "Setting wifi p2p channel: lc=$lc, oc=$oc")
         }
-        mWifiP2pManager.setWifiP2pChannels(mWifiP2pChannel,
-                lc, oc, new ActionListener() {
-                    @Override
-                    public void onSuccess() {
-                        if (DEBUG) {
-                            Slog.d(TAG, "Successfully set wifi p2p channels.");
-                        }
+        mWifiP2pManager.setWifiP2pChannels(
+            mWifiP2pChannel!!,
+            lc, oc, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    if (DEBUG) {
+                        Slog.d(TAG, "Successfully set wifi p2p channels.")
                     }
+                }
 
-                    @Override
-                    public void onFailure(int reason) {
-                        Slog.e(TAG, "Failed to set wifi p2p channels with reason " + reason + ".");
-                    }
-                });
+                override fun onFailure(reason: Int) {
+                    Slog.e(TAG, "Failed to set wifi p2p channels with reason $reason.")
+                }
+            })
     }
 
-    private void toggleRoute(RouteInfo route) {
-        if (route.isSelected()) {
-            MediaRouteDialogPresenter.showDialogFragment(getActivity(),
-                    MediaRouter.ROUTE_TYPE_REMOTE_DISPLAY, null);
+    private fun toggleRoute(route: MediaRouter.RouteInfo) {
+        if (route.isSelected) {
+            MediaRouteDialogPresenter.showDialogFragment(
+                requireActivity(),
+                MediaRouter.ROUTE_TYPE_REMOTE_DISPLAY, null
+            )
         } else {
-            /// M: WFD sink support @{
+            /** M: WFD sink support @{ */
             if (mWfdChangeResolution != null) {
-                mWfdChangeResolution.prepareWfdConnect();
+                mWfdChangeResolution!!.prepareWfdConnect()
             }
-            /// @}
-            route.select();
+            /** @}
+             */
+            route.select()
         }
     }
 
-    private void pairWifiDisplay(WifiDisplay display) {
+    private fun pairWifiDisplay(display: WifiDisplay) {
         if (display.canConnect()) {
-            /// M: WFD sink support @{
-            if (mWfdChangeResolution != null) {
-                mWfdChangeResolution.prepareWfdConnect();
-            }
-            /// @}
-            mDisplayManager.connectWifiDisplay(display.getDeviceAddress());
+            /** M: WFD sink support @{ */
+            mWfdChangeResolution?.prepareWfdConnect()
+            /** @}
+             */
+            mDisplayManager.connectWifiDisplay(display.deviceAddress)
         }
     }
 
-    private void showWifiDisplayOptionsDialog(final WifiDisplay display) {
-        View view = getActivity().getLayoutInflater().inflate(R.layout.wifi_display_options, null);
-        final EditText nameEditText = (EditText) view.findViewById(R.id.name);
-        nameEditText.setText(display.getFriendlyDisplayName());
+    private fun showWifiDisplayOptionsDialog(display: WifiDisplay) {
+        val view =
+            requireActivity().layoutInflater.inflate(R.layout.wifi_display_options, null)
+        val nameEditText = view.findViewById<View?>(R.id.name) as EditText
+        nameEditText.setText(display.friendlyDisplayName)
 
-        DialogInterface.OnClickListener done = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String name = nameEditText.getText().toString().trim();
-                if (name.isEmpty() || name.equals(display.getDeviceName())) {
-                    name = null;
+        val done: DialogInterface.OnClickListener = object : DialogInterface.OnClickListener {
+            override fun onClick(dialog: DialogInterface?, which: Int) {
+                var name: String? = nameEditText.text.toString().trim { it <= ' ' }
+                if (name!!.isEmpty() || name == display.deviceName) {
+                    name = null
                 }
-                mDisplayManager.renameWifiDisplay(display.getDeviceAddress(), name);
+                mDisplayManager.renameWifiDisplay(display.deviceAddress, name)
             }
-        };
-        DialogInterface.OnClickListener forget = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mDisplayManager.forgetWifiDisplay(display.getDeviceAddress());
+        }
+        val forget: DialogInterface.OnClickListener = object : DialogInterface.OnClickListener {
+            override fun onClick(dialog: DialogInterface?, which: Int) {
+                mDisplayManager.forgetWifiDisplay(display.deviceAddress)
             }
-        };
+        }
 
-        AlertDialog dialog = new AlertDialog.Builder(getActivity())
-                .setCancelable(true)
-                .setTitle(R.string.wifi_display_options_title)
-                .setView(view)
-                .setPositiveButton(R.string.wifi_display_options_done, done)
-                .setNegativeButton(R.string.wifi_display_options_forget, forget)
-                .create();
-        dialog.show();
+        val dialog = AlertDialog.Builder(requireActivity())
+            .setCancelable(true)
+            .setTitle(R.string.wifi_display_options_title)
+            .setView(view)
+            .setPositiveButton(R.string.wifi_display_options_done, done)
+            .setNegativeButton(R.string.wifi_display_options_forget, forget)
+            .create()
+        dialog.show()
     }
 
-    private final Runnable mUpdateRunnable = new Runnable() {
-        @Override
-        public void run() {
-            final int changes = mPendingChanges;
-            mPendingChanges = 0;
-            update(changes);
+    private val mUpdateRunnable: Runnable = object : Runnable {
+        override fun run() {
+            val changes = mPendingChanges
+            mPendingChanges = 0
+            update(changes)
         }
-    };
+    }
 
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action.equals(DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED)) {
-                scheduleUpdate(CHANGE_WIFI_DISPLAY_STATUS);
+    private val mReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        @SuppressLint("UnsafeImplicitIntentLaunch")
+        override fun onReceive(context: Context?, intent: Intent) {
+            val action = intent.action
+            if (action == DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED) {
+                scheduleUpdate(CHANGE_WIFI_DISPLAY_STATUS)
             }
         }
-    };
+    }
 
-    private final ContentObserver mSettingsObserver = new ContentObserver(new Handler()) {
-        @Override
-        public void onChange(boolean selfChange, Uri uri) {
-            scheduleUpdate(CHANGE_SETTINGS);
+    private val mSettingsObserver: ContentObserver = object : ContentObserver(Handler()) {
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            scheduleUpdate(CHANGE_SETTINGS)
         }
-    };
+    }
 
-    private final MediaRouter.Callback mRouterCallback = new MediaRouter.SimpleCallback() {
-        @Override
-        public void onRouteAdded(MediaRouter router, RouteInfo info) {
-            scheduleUpdate(CHANGE_ROUTES);
+    private val mRouterCallback: MediaRouter.Callback = object : MediaRouter.SimpleCallback() {
+        override fun onRouteAdded(router: MediaRouter?, info: MediaRouter.RouteInfo?) {
+            scheduleUpdate(CHANGE_ROUTES)
         }
 
-        @Override
-        public void onRouteChanged(MediaRouter router, RouteInfo info) {
-            scheduleUpdate(CHANGE_ROUTES);
+        override fun onRouteChanged(router: MediaRouter?, info: MediaRouter.RouteInfo?) {
+            scheduleUpdate(CHANGE_ROUTES)
         }
 
-        @Override
-        public void onRouteRemoved(MediaRouter router, RouteInfo info) {
-            scheduleUpdate(CHANGE_ROUTES);
+        override fun onRouteRemoved(router: MediaRouter?, info: MediaRouter.RouteInfo?) {
+            scheduleUpdate(CHANGE_ROUTES)
         }
 
-        @Override
-        public void onRouteSelected(MediaRouter router, int type, RouteInfo info) {
-            scheduleUpdate(CHANGE_ROUTES);
+        override fun onRouteSelected(
+            router: MediaRouter?,
+            type: Int,
+            info: MediaRouter.RouteInfo?,
+        ) {
+            scheduleUpdate(CHANGE_ROUTES)
         }
 
-        @Override
-        public void onRouteUnselected(MediaRouter router, int type, RouteInfo info) {
-            scheduleUpdate(CHANGE_ROUTES);
+        override fun onRouteUnselected(
+            router: MediaRouter?,
+            type: Int,
+            info: MediaRouter.RouteInfo?,
+        ) {
+            scheduleUpdate(CHANGE_ROUTES)
         }
-    };
+    }
 
-    private class RoutePreference extends TwoStatePreference
-            implements Preference.OnPreferenceClickListener {
-        private final RouteInfo mRoute;
+    init {
+        mHandler = Handler()
+    }
 
-        public RoutePreference(Context context, RouteInfo route) {
-            super(context);
-
-            mRoute = route;
-            setTitle(route.getName());
-            setSummary(route.getDescription());
-            setEnabled(route.isEnabled());
-            if (route.isSelected()) {
-                setOrder(ORDER_CONNECTED);
-                if (route.isConnecting()) {
-                    setSummary(R.string.wifi_display_status_connecting);
+    private open inner class RoutePreference(
+        context: Context,
+        private val mRoute: MediaRouter.RouteInfo,
+    ) : TwoStatePreference(context), Preference.OnPreferenceClickListener {
+        init {
+            title = mRoute.name
+            setSummary(mRoute.description)
+            isEnabled = mRoute.isEnabled
+            if (mRoute.isSelected) {
+                order = ORDER_CONNECTED
+                if (mRoute.isConnecting) {
+                    setSummary(R.string.wifi_display_status_connecting)
                 } else {
-                    CharSequence status = route.getStatus();
+                    val status = mRoute.status
                     if (!TextUtils.isEmpty(status)) {
-                        setSummary(status);
+                        setSummary(status)
                     } else {
-                        setSummary(R.string.wifi_display_status_connected);
+                        setSummary(R.string.wifi_display_status_connected)
                     }
                 }
             } else {
-                if (isEnabled()) {
-                    setOrder(ORDER_AVAILABLE);
+                if (isEnabled) {
+                    order = ORDER_AVAILABLE
                 } else {
-                    setOrder(ORDER_UNAVAILABLE);
-                    if (route.getStatusCode() == RouteInfo.STATUS_IN_USE) {
-                        setSummary(R.string.wifi_display_status_in_use);
+                    order = ORDER_UNAVAILABLE
+                    if (mRoute.statusCode == MediaRouter.RouteInfo.STATUS_IN_USE) {
+                        setSummary(R.string.wifi_display_status_in_use)
                     } else {
-                        setSummary(R.string.wifi_display_status_not_available);
+                        setSummary(R.string.wifi_display_status_not_available)
                     }
                 }
             }
-            setOnPreferenceClickListener(this);
+            onPreferenceClickListener = this
         }
 
-        @Override
-        public boolean onPreferenceClick(Preference preference) {
-            toggleRoute(mRoute);
-            return true;
+        override fun onPreferenceClick(preference: Preference): Boolean {
+            toggleRoute(mRoute)
+            return true
         }
     }
 
-    private class WifiDisplayRoutePreference extends RoutePreference
-            implements OnClickListener {
-        private final WifiDisplay mDisplay;
+    private open inner class WifiDisplayRoutePreference(
+        context: Context, route: MediaRouter.RouteInfo,
+        private val mDisplay: WifiDisplay,
+    ) : RoutePreference(context, route), View.OnClickListener {
+        val secondTargetResId: Int
+            get() = R.layout.preference_widget_gear
 
-        protected int getSecondTargetResId() {
-            return R.layout.preference_widget_gear;
-        }
+        override fun onBindViewHolder(holder: PreferenceViewHolder) {
+            super.onBindViewHolder(holder)
 
-        public WifiDisplayRoutePreference(Context context, RouteInfo route,
-                WifiDisplay display) {
-            super(context, route);
-            mDisplay = display;
-        }
-
-        @Override
-        public void onBindViewHolder(PreferenceViewHolder holder) {
-            super.onBindViewHolder(holder);
-
-            final ImageView gear = (ImageView) holder.findViewById(R.id.settings_button);
+            val gear = holder.findViewById(R.id.settings_button) as ImageView?
             if (gear != null) {
-                gear.setOnClickListener(this);
-                if (!isEnabled()) {
-                    TypedValue value = new TypedValue();
-                    getContext().getTheme().resolveAttribute(android.R.attr.disabledAlpha,
-                            value, true);
-                    gear.setImageAlpha((int) (value.getFloat() * 255));
-                    gear.setEnabled(true); // always allow button to be pressed
+                gear.setOnClickListener(this)
+                if (!isEnabled) {
+                    val value = TypedValue()
+                    getContext().theme.resolveAttribute(
+                        android.R.attr.disabledAlpha,
+                        value, true
+                    )
+                    gear.imageAlpha = (value.float * 255).toInt()
+                    gear.isEnabled = true // always allow button to be pressed
                 }
             }
         }
 
-        @Override
-        public void onClick(View v) {
-            showWifiDisplayOptionsDialog(mDisplay);
+        override fun onClick(v: View?) {
+            showWifiDisplayOptionsDialog(mDisplay)
         }
     }
 
-    private class UnpairedWifiDisplayPreference extends Preference
-            implements Preference.OnPreferenceClickListener {
-        private final WifiDisplay mDisplay;
-
-        public UnpairedWifiDisplayPreference(Context context, WifiDisplay display) {
-            super(context);
-
-            mDisplay = display;
-            setTitle(display.getFriendlyDisplayName());
-            setSummary(com.android.internal.R.string.wireless_display_route_description);
-            setEnabled(display.canConnect());
-            if (isEnabled()) {
-                setOrder(ORDER_AVAILABLE);
+    private inner class UnpairedWifiDisplayPreference(
+        context: Context,
+        private val mDisplay: WifiDisplay,
+    ) : Preference(context), Preference.OnPreferenceClickListener {
+        init {
+            title = mDisplay.friendlyDisplayName
+            setSummary(com.android.internal.R.string.wireless_display_route_description)
+            isEnabled = mDisplay.canConnect()
+            if (isEnabled) {
+                order = ORDER_AVAILABLE
             } else {
-                setOrder(ORDER_UNAVAILABLE);
-                setSummary(R.string.wifi_display_status_in_use);
+                order = ORDER_UNAVAILABLE
+                setSummary(com.peihua.miracastdemo.R.string.wifi_display_status_in_use)
             }
-            setOnPreferenceClickListener(this);
+            onPreferenceClickListener = this
         }
 
-        @Override
-        public boolean onPreferenceClick(Preference preference) {
-            pairWifiDisplay(mDisplay);
-            return true;
+        override fun onPreferenceClick(preference: Preference): Boolean {
+            pairWifiDisplay(mDisplay)
+            return true
+        }
+    } //    public static final BaseSearchIndexProvider SEARCH_INDEX_DATA_PROVIDER =
+    //            new BaseSearchIndexProvider(R.xml.wifi_display_settings);
+
+    companion object {
+        private const val TAG = "WifiDisplaySettings"
+        private const val DEBUG = false
+
+        private val MENU_ID_ENABLE_WIFI_DISPLAY = Menu.FIRST
+
+        private val CHANGE_SETTINGS = 1 shl 0
+        private val CHANGE_ROUTES = 1 shl 1
+        private val CHANGE_WIFI_DISPLAY_STATUS = 1 shl 2
+        private val CHANGE_ALL = -1
+
+        private const val ORDER_CERTIFICATION = 1
+        private const val ORDER_CONNECTED = 2
+        private const val ORDER_AVAILABLE = 3
+        private const val ORDER_UNAVAILABLE = 4
+
+        @JvmStatic
+        fun isAvailable(context: Context): Boolean {
+            return context.getSystemService(Context.DISPLAY_SERVICE) != null && context.packageManager
+                .hasSystemFeature(
+                    PackageManager.FEATURE_WIFI_DIRECT
+                )
+                    && context.getSystemService(Context.WIFI_P2P_SERVICE) != null
         }
     }
-
-//    public static final BaseSearchIndexProvider SEARCH_INDEX_DATA_PROVIDER =
-//            new BaseSearchIndexProvider(R.xml.wifi_display_settings);
 }

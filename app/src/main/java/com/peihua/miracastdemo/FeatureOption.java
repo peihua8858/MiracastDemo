@@ -30,8 +30,8 @@ public class FeatureOption {
 
     public static final boolean MTK_WAPI_SUPPORT = getValue("ro.vendor.mtk_wapi_support");
     public static final boolean MTK_WFD_SUPPORT = getValue("ro.vendor.mtk_wfd_support");
-    public static final boolean MTK_WFD_SINK_SUPPORT = true;//getValue("ro.vendor.mtk_wfd_sink_support");
-    public static final boolean MTK_WFD_SINK_UIBC_SUPPORT = true;//getValue("ro.vendor.mtk_wfd_sink_uibc_support");
+    public static final boolean MTK_WFD_SINK_SUPPORT = getValue("ro.vendor.mtk_wfd_sink_support");
+    public static final boolean MTK_WFD_SINK_UIBC_SUPPORT =getValue("ro.vendor.mtk_wfd_sink_uibc_support");
 
  // Important!!!  the SystemProperties key's length must less than 31 , or will have JE
       /* get the key's value */
