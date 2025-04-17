@@ -1,11 +1,14 @@
 package com.peihua.miracastdemo;
+
 import android.os.SystemProperties;
+
+import com.peihua.miracastdemo.utils.Logcat;
 
 public class FeatureOption {
 
     public static final boolean MTK_VOLTE_SUPPORT = getValue("persist.vendor.volte_support");
     public static final boolean MTK_SYSTEM_UPDATE_SUPPORT =
-        getValue("ro.vendor.mtk_system_update_support");
+            getValue("ro.vendor.mtk_system_update_support");
     public static final boolean MTK_FOTA_ENTRY = getValue("ro.vendor.mtk_fota_entry");
     public static final boolean MTK_SCOMO_ENTRY = getValue("ro.vendor.mtk_scomo_entry");
     public static final boolean MTK_MDM_SCOMO = getValue("ro.vendor.mtk_mdm_scomo");
@@ -13,10 +16,10 @@ public class FeatureOption {
     public static final boolean MTK_A1_FEATURE = getValue("ro.vendor.mtk_a1_feature");
 
     public static final boolean MTK_BESLOUDNESS_SUPPORT =
-      getValue("ro.vendor.mtk_besloudness_support");
+            getValue("ro.vendor.mtk_besloudness_support");
     public static final boolean MTK_ANC_SUPPORT = getValue("ro.vendor.mtk_active_noise_cancel");
     public static final boolean MTK_HIFI_AUDIO_SUPPORT =
-      getValue("ro.vendor.mtk_hifiaudio_support");
+            getValue("ro.vendor.mtk_hifiaudio_support");
     public static final boolean MTK_AOD_SUPPORT = getValue("ro.vendor.mtk_aod_support");
     public static final boolean MTK_OMACP_SUPPORT = getValue("ro.vendor.mtk_omacp_support");
     public static final boolean MTK_GPS_SUPPORT = getValue("ro.vendor.mtk_gps_support");
@@ -30,12 +33,14 @@ public class FeatureOption {
 
     public static final boolean MTK_WAPI_SUPPORT = getValue("ro.vendor.mtk_wapi_support");
     public static final boolean MTK_WFD_SUPPORT = getValue("ro.vendor.mtk_wfd_support");
-    public static final boolean MTK_WFD_SINK_SUPPORT = getValue("ro.vendor.mtk_wfd_sink_support");
+    public static final boolean MTK_WFD_SINK_SUPPORT =getValue("ro.vendor.mtk_wfd_sink_support");
     public static final boolean MTK_WFD_SINK_UIBC_SUPPORT =getValue("ro.vendor.mtk_wfd_sink_uibc_support");
 
- // Important!!!  the SystemProperties key's length must less than 31 , or will have JE
-      /* get the key's value */
+    // Important!!!  the SystemProperties key's length must less than 31 , or will have JE
+    /* get the key's value */
     private static boolean getValue(String key) {
-        return SystemProperties.get(key).equals("1");
+        String value = SystemProperties.get(key);
+        Logcat.d("FeatureOption", "getValue: " + key + " value: " + value);
+        return value.equals("1");
     }
 }

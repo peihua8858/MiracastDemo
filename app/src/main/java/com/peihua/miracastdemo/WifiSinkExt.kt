@@ -8,6 +8,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.display.DisplayManager
 import android.hardware.display.WifiDisplayStatus
+import android.net.NetworkInfo
+import android.net.wifi.p2p.WifiP2pManager
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -35,28 +37,50 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
     private var mUiPortrait = false;
     private var mRefreshed = false;
     val mSurfaceView: SurfaceView by lazy { SurfaceView(mContext) };
+
     init {
 //        mSurfaceView.holder.addCallback(this)
     }
+
     private val mReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         @SuppressLint("UnsafeImplicitIntentLaunch")
         override fun onReceive(context: Context?, intent: Intent) {
             val action = intent.action
-            if (action == DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED) {
-                val status = mDisplayManager.wifiDisplayStatus
-                val bStateOn =
-                    status != null && status.featureState == WifiDisplayStatus.FEATURE_STATE_ON
-                if (bStateOn) {
-                    val wfdState = status?.activeDisplayState
-                    if (wfdState == WifiDisplayStatus.DISPLAY_STATE_CONNECTED) {
-                        val intent = Intent("mediatek.settings.WFD_SINK_SETTINGS");
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK;
-                        context?.startActivity(intent)
-                    }
+            Logcat.v("@M_${TAG}", "receive action: $action")
+//            if (action == DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED) {
+//                val status = mDisplayManager.wifiDisplayStatus
+//                val bStateOn =
+//                    status != null && status.featureState == WifiDisplayStatus.FEATURE_STATE_ON
+//                if (bStateOn) {
+//                    val wfdState = status?.activeDisplayState
+//                    if (wfdState == WifiDisplayStatus.DISPLAY_STATE_CONNECTED) {
+//                        val intent = Intent("mediatek.settings.WFD_SINK_SETTINGS");
+//                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK;
+//                        context?.startActivity(intent)
+//                    }
+//                }
+//            }
+         /*   if (action == WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION) {
+                val p2pInfo =
+                    intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO) as? WifiP2pInfo;
+                if (p2pInfo?.groupFormed == true) {
+                    val intent = Intent("mediatek.settings.WFD_SINK_SETTINGS");
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK;
+                    context?.startActivity(intent)
+                }
+            } else */if (action.equals(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)) {
+                val networkInfo =
+                    intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO) as NetworkInfo
+                Logcat.d("@M_${TAG}", "networkInfo.isConnected: ${networkInfo.isConnected}")
+                if (networkInfo.isConnected) {
+                    val intent = Intent("mediatek.settings.WFD_SINK_SETTINGS")
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    context?.startActivity(intent)
                 }
             }
         }
     }
+
     override fun onReceive(context: Context?, intent: Intent?) {
         val action = intent?.action
         Logcat.v("@M_${TAG}", "receive action: $action")
@@ -96,7 +120,10 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
     }
 
     private fun Context.handleWfdStateChanged(wfdState: Int, sinkMode: Boolean) {
-        Logcat.d("@M_${TAG}", "handleWfdStateChanged wfdState: $wfdState, sinkMode: $sinkMode,isSinkMode: $isSinkMode")
+        Logcat.d(
+            "@M_${TAG}",
+            "handleWfdStateChanged wfdState: $wfdState, sinkMode: $sinkMode,isSinkMode: $isSinkMode"
+        )
         when (wfdState) {
             WifiDisplayStatus.DISPLAY_STATE_NOT_CONNECTED -> {
                 if (sinkMode) {
@@ -115,6 +142,7 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
                     apiModel.invokeOnConnection(wfdState)
                 }
             }
+
             WifiDisplayStatus.DISPLAY_STATE_CONNECTED -> {
                 if (sinkMode) {
                     Logcat.d("@M_${TAG}", "mUiPortrait: $mUiPortrait")
@@ -140,18 +168,23 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
     val wifiDisplayStatus: WifiDisplayStatus?
         get() = mDisplayManager.wifiDisplayStatus
 
-    fun onStart(activity: Activity) {
-        onStop(activity)
-        setWfdMode(true)
+    fun onStart(activity: Activity,isEnable:Boolean) {
+        Logcat.d("@M_${TAG}", "onStart,isEnable: $isEnable");
+//        onStop(activity)
 //        mSurfaceView.holder.addCallback(this)
+        setWfdMode(isEnable)
         registerInnerReceiver()
-        onRegister(activity)
+//        onRegister(activity)
     }
 
     private fun registerInnerReceiver() {
+        Logcat.d("@M_${TAG}", "registerInnerReceiver");
         if (FeatureOption.MTK_WFD_SINK_SUPPORT) {
+            Logcat.d("@M_${TAG}", "registerInnerReceiver");
             val filter = IntentFilter()
-            filter.addAction(ACTION_WIFI_DISPLAY_STATUS_CHANGED)
+//            filter.addAction(ACTION_WIFI_DISPLAY_STATUS_CHANGED)
+            //intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+            filter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
             mContext.registerReceiver(mReceiver, filter)
         }
     }
@@ -165,14 +198,17 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
      * Called when activity started.
      */
     fun onRegister(context: Context) {
-        Logcat.d("@M_${TAG}", "onRegister>>>>FeatureOption.MTK_WFD_SINK_SUPPORT: ${FeatureOption.MTK_WFD_SINK_SUPPORT}")
+        Logcat.d(
+            "@M_${TAG}",
+            "onRegister>>>>FeatureOption.MTK_WFD_SINK_SUPPORT: ${FeatureOption.MTK_WFD_SINK_SUPPORT}"
+        )
         if (FeatureOption.MTK_WFD_SINK_SUPPORT) {
             val wfdStatus = wifiDisplayStatus
-            context.handleWfdStatusChanged(wfdStatus);
-            val filter = IntentFilter();
-            filter.addAction(ACTION_WIFI_DISPLAY_STATUS_CHANGED);
+            context.handleWfdStatusChanged(wfdStatus)
+            val filter = IntentFilter()
+            filter.addAction(ACTION_WIFI_DISPLAY_STATUS_CHANGED)
             filter.addAction(ACTION_WFD_PORTRAIT)
-            context.registerReceiver(this, filter);
+            context.registerReceiver(this, filter)
         }
     }
 
@@ -182,7 +218,7 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
             try {
                 context.unregisterReceiver(this);
             } catch (e: Exception) {
-               e.printStackTrace()
+                e.printStackTrace()
             }
             mRefreshed = false;
         }
@@ -219,7 +255,7 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
     }
 
     var isSinkMode: Boolean
-        get() = mDisplayManager.isSinkEnabled ?: false
+        get() = mDisplayManager.isSinkEnabled
         set(value) = mDisplayManager.enableSink(value)
 
     fun setWfdMode(sink: Boolean) {
@@ -231,6 +267,7 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
     fun waitWfdSinkConnection(surface: Surface?) {
         mDisplayManager.waitWifiDisplayConnection(surface)
         Logcat.d("Miracast_$TAG", "waitWfdSinkConnection $surface")
+
     }
 
     /**
@@ -278,7 +315,6 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
 }
 
 
-
 data class WifiSinkDisplayStatus(var width: Int, var height: Int)
 
 
@@ -296,10 +332,12 @@ class ReceiverApiModel {
         this.onConnection = onConnection
         return this
     }
+
     infix fun onDisconnection(onDisconnection: (Int) -> Unit?): ReceiverApiModel {
         this.onDisconnection = onDisconnection
         return this
     }
+
     infix fun onRequestFullScreen(onRequestFullScreen: (() -> Unit)?): ReceiverApiModel {
         this.onRequestFullScreen = onRequestFullScreen
         return this
@@ -345,9 +383,11 @@ class ReceiverApiModel {
     fun invokeOnRequestFullScreen() {
         this.onRequestFullScreen?.invoke()
     }
+
     fun invokeOnConnection(status: Int) {
         this.onConnection?.invoke(status)
     }
+
     fun invokeOnDisconnection(status: Int) {
         this.onDisconnection?.invoke(status)
     }

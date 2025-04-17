@@ -1,7 +1,7 @@
 package com.peihua.miracastdemo
 
+import android.graphics.Color
 import android.graphics.Point
-import android.hardware.display.WifiDisplayStatus
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
@@ -9,6 +9,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
 import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
@@ -17,36 +18,63 @@ import com.peihua.miracastdemo.utils.Logcat
 
 @Suppress("DEPRECATION")
 class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callback {
-    private val mSinkExt: WifiSinkExt by lazy {
-        WifiSinkExt(this) {
-            onRefreshed {
-                Logcat.d("onRefreshed: $it")
-                mSurfaceView.refresh(it.width, it.height)
-            }
-            onConnection {
-                Logcat.d("onConnection: $it")
-            }
-            onDisconnection {
-                Logcat.d("onDisconnection: $it")
-                finish()
-            }
-            onChangeStatus {
-                Logcat.d("onChangeStatus: $it")
-            }
-            onChangeUiPortrait {
-                Logcat.d("onChangeUiPortrait: $it")
-            }
-            onRequestFullScreen {
-                val systemUiVis = window.decorView.systemUiVisibility;
-                if ((systemUiVis and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0) {
-                    requestFullScreen(systemUiVis)
-                }
-            }
-        }
-    }
+    //    private val mSinkExt: WifiSinkExt by lazy {
+//        WifiSinkExt(this) {
+//            onRefreshed {
+//                Logcat.d("onRefreshed: $it")
+//                mSurfaceView.refresh(it.width, it.height)
+//            }
+//            onConnection {
+//                Logcat.d("onConnection: $it")
+//            }
+//            onDisconnection {
+//                Logcat.d("onDisconnection: $it")
+//                finish()
+//            }
+//            onChangeStatus {
+//                Logcat.d("onChangeStatus: $it")
+//            }
+//            onChangeUiPortrait {
+//                Logcat.d("onChangeUiPortrait: $it")
+//            }
+//            onRequestFullScreen {
+//                val systemUiVis = window.decorView.systemUiVisibility;
+//                if ((systemUiVis and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0) {
+//                    requestFullScreen(systemUiVis)
+//                }
+//            }
+//        }
+//    }
     private val mSurfaceView: SurfaceView by lazy {
         SurfaceView(this)
 //        mSinkExt.mSurfaceView
+    }
+    val contentView by lazy { FrameLayout(this) }
+    val callback: ReceiverApiModel.() -> Unit = {
+        onRefreshed {
+            Logcat.d("onRefreshed: $it")
+            mSurfaceView.refresh(it.width, it.height)
+        }
+        onConnection {
+            Logcat.d("onConnection: $it")
+            setupWfdSinkConnection()
+        }
+        onDisconnection {
+            Logcat.d("onDisconnection: $it")
+            finish()
+        }
+        onChangeStatus {
+            Logcat.d("onChangeStatus: $it")
+        }
+        onChangeUiPortrait {
+            Logcat.d("onChangeUiPortrait: $it")
+        }
+        onRequestFullScreen {
+            val systemUiVis = window.decorView.systemUiVisibility;
+            if ((systemUiVis and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0) {
+                requestFullScreen(systemUiVis)
+            }
+        }
     }
     private var mSurfaceShowing = false;
     private fun requestFullScreen(systemUi: Int) {
@@ -69,25 +97,62 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         }
     }
 
+    fun setupWfdSinkConnection() {
+//        addSurfaceView()
+//        mSinkExt.waitWfdSinkConnection(mSurfaceView.holder.surface)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val bundle = intent.extras ?: Bundle()
         val width = bundle.getInt("width", 1920)
         val height = bundle.getInt("height", 1080)
         Logcat.d("onCreate: [$width, $height]")
-        if (mSurfaceView.parent != null) {
-            (mSurfaceView.parent as ViewGroup).removeView(mSurfaceView)
-        }
-        mSurfaceView.refresh(width, height)
-        setContentView(mSurfaceView)
+//        set1Px()
+        setMathParent()
+//        mSurfaceView.refresh(width, height)
+        contentView.setBackgroundColor(Color.BLACK)
+        contentView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        setContentView(contentView)
         requestFullScreen(window.decorView.systemUiVisibility)
         window.addFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
-
+        addSurfaceView()
         mSurfaceView.holder.addCallback(this)
-        mSinkExt.handleWfdStatusChanged(mSinkExt.wifiDisplayStatus, this)
-        mSinkExt.onRegister(this)
+        WifiSinkDisplayManager.getInstance().register(callback)
+        WifiSinkDisplayManager.getInstance().onRegister(this)
+//        mSinkExt.onStart(this)
+//
+//        mSinkExt.handleWfdStatusChanged(mSinkExt.wifiDisplayStatus, this)
+//        mSinkExt.onRegister(this)
+    }
+
+    private fun set1Px() {
+        val window = window
+        window.setGravity(Gravity.START or Gravity.TOP)
+        val params = window.attributes
+        params.x = 0
+        params.y = 0
+        params.height = 1
+        params.width = 1
+        window.attributes = params
+    }
+
+    private fun setMathParent() {
+        val window = window
+        val params = window.attributes
+        params.height = LayoutParams.MATCH_PARENT
+        params.width = LayoutParams.MATCH_PARENT
+        window.attributes = params
+    }
+
+    private fun addSurfaceView() {
+        if (mSurfaceView.parent != null) {
+            (mSurfaceView.parent as ViewGroup).removeView(mSurfaceView)
+        }
+
+        contentView.addView(mSurfaceView, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
 
 
@@ -96,8 +161,11 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         window.clearFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
-        mSinkExt.onStop(this)
+//        mSinkExt.onStop(this)
         mSurfaceView.holder.removeCallback(this)
+        WifiSinkDisplayManager.getInstance().unRegister(callback)
+        WifiSinkDisplayManager.getInstance().onUnRegister(this)
+//        WifiSinkDisplayManager.getInstance().onStop(this)
         restoreOrientation();
     }
 
@@ -118,6 +186,9 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
     }
 
     fun SurfaceView.refresh(width: Int, height: Int) {
+        if (width > 0 && height > 0) {
+            setMathParent()
+        }
         val size = Point()
         windowManager.defaultDisplay.getRealSize(size)
         val wm_width = size.x
@@ -133,7 +204,7 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
 
     private fun disconnect() {
         if (mSurfaceShowing) {
-            mSinkExt.disconnectWfdSinkConnection();
+            WifiSinkDisplayManager.getInstance().disconnectWfdSinkConnection();
         }
         mSurfaceShowing = false;
     }
@@ -142,7 +213,7 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         Logcat.d("@M_${TAG}", "surfaceCreated")
         if (holder != null/* && mSinkExt.isSinkMode*/) {
             if (!mSurfaceShowing) {
-                mSinkExt.setupWfdSinkConnection(holder.surface)
+                WifiSinkDisplayManager.getInstance().waitWfdSinkConnection(holder.surface)
             }
             mSurfaceShowing = true;
         }

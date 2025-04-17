@@ -6,7 +6,7 @@
     <string name="wfd_change_resolution_menu_title">更改分辨率</string>
     <string name="wfd_sink_summary">其他设备可检测到此设备</string>
     <string name="wfd_device_category">设备列表</string>
-    <string name="wfd_sink_toast_enjoy">开始显示其他设备的投射屏幕》》》》》》》</string>
+    <string name="wfd_sink_toast_enjoy">开始显示其他设备的投射屏幕</string>
     <string name="wfd_sink_toast_disconnect">投射屏幕连接终止</string>
     <string name="wfd_sink_disconnecting">正在断开连接…</string>
     <string name="wfd_sink_guide_btn">我知道了</string>

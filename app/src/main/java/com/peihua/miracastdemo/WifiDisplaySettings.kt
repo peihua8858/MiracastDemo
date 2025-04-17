@@ -277,7 +277,7 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
 
         // Update wifi display state.
         if ((changes and CHANGE_WIFI_DISPLAY_STATUS) != 0) {
-            mWifiDisplayStatus = mDisplayManager!!.wifiDisplayStatus
+            mWifiDisplayStatus = mDisplayManager.wifiDisplayStatus
 
             // The wifi display feature state may have changed.
             invalidateOptions = true
@@ -552,7 +552,7 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
             }
 
             override fun onFailure(reason: Int) {
-                Slog.e(TAG, "Failed to start AutoGO with reason " + reason + ".")
+                Slog.e(TAG, "Failed to start AutoGO with reason $reason.")
             }
         })
     }
@@ -698,7 +698,7 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
         }
     }
 
-    private val mSettingsObserver: ContentObserver = object : ContentObserver(Handler()) {
+    private val mSettingsObserver: ContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
             scheduleUpdate(CHANGE_SETTINGS)
         }

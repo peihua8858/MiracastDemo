@@ -1,5 +1,6 @@
 package com.peihua.miracastdemo;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -11,7 +12,6 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -23,6 +23,7 @@ import androidx.preference.SwitchPreference;
 
 import com.peihua.miracastdemo.utils.ActivityEmbeddingUtils;
 import com.mediatek.provider.MtkSettingsExt;
+import com.peihua.miracastdemo.utils.Logcat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,7 +66,7 @@ public class WfdChangeResolution {
     public void onCreateOptionMenu(Menu menu, WifiDisplayStatus status) {
         int currentResolution = Settings.Global.getInt(mContext.getContentResolver(),
                 MtkSettingsExt.Global.WIFI_DISPLAY_RESOLUTION, 0);
-        Log.d("@M_" + TAG, "current resolution is " + currentResolution);
+        Logcat.d("@M_" + TAG, "current resolution is " + currentResolution);
         if (DEVICE_RESOLUTION_LIST.contains(currentResolution)) {
             menu.add(Menu.NONE, MENU_ID_CHANGE_RESOLUTION,
                 0, R.string.wfd_change_resolution_menu_title)
@@ -97,7 +98,7 @@ public class WfdChangeResolution {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            Log.v("@M_" + TAG, "receive action: " + action);
+            Logcat.v("@M_" + TAG, "receive action: " + action);
             if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION
                     .equals(action)) {
                 mP2pDevice = (WifiP2pDevice) intent
@@ -137,13 +138,13 @@ public class WfdChangeResolution {
                     @Override
                     public boolean onPreferenceClick(final Preference preference) {
                         mOrientationSettings = Settings.System.getInt(mContext.getContentResolver(), Settings.System.USER_ROTATION, 0);
-                        Log.d(TAG,"WfdChangeResolution onPreferenceClick ---->mOrientationSettings--->" + mOrientationSettings);
+                        Logcat.d(TAG,"WfdChangeResolution onPreferenceClick ---->mOrientationSettings--->" + mOrientationSettings);
                         ActivityEmbeddingUtils.setOrientationSettings(mOrientationSettings);
                         ActivityEmbeddingUtils.setIsSplitEnabled(false);
                         Settings.System.putInt(mContext.getContentResolver(), Settings.System.USER_ROTATION, 1);
 //                        mDisplayManager.enableSink(true);
-//                        WifiSinkDisplayManager.getInstance().onStart((Activity) mContext);
-                        return false;
+                        WifiSinkDisplayManager.getInstance().onStart((Activity) mContext,mDevicePref.isChecked());
+                        return true;
                     }
                 });
             }
@@ -162,7 +163,7 @@ public class WfdChangeResolution {
      * Called when activity started.
      */
     public void onStart() {
-        Log.d("@M_" + TAG, "onStart");
+        Logcat.d("@M_" + TAG, "onStart");
         if (FeatureOption.MTK_WFD_SINK_SUPPORT) {
             IntentFilter filter = new IntentFilter();
             filter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
@@ -173,7 +174,7 @@ public class WfdChangeResolution {
      * Called when activity stopped.
      */
     public void onStop() {
-        Log.d("@M_" + TAG, "onStop");
+        Logcat.d("@M_" + TAG, "onStop");
         if (FeatureOption.MTK_WFD_SINK_SUPPORT) {
             mContext.unregisterReceiver(mReceiver);
         }
@@ -189,7 +190,7 @@ public class WfdChangeResolution {
     }
     /**
      * Handle WFD status changed event.
-     *
+     * WifiDisplayStatus.getActiveDisplayState()
      * @param status
      *            The latest WFD status
      */
@@ -199,10 +200,10 @@ public class WfdChangeResolution {
         }
         boolean bStateOn = (status != null
             && status.getFeatureState() == WifiDisplayStatus.FEATURE_STATE_ON);
-        Log.d("@M_" + TAG, "handleWfdStatusChanged bStateOn: " + bStateOn);
+        Logcat.d("@M_" + TAG, "handleWfdStatusChanged bStateOn: " + bStateOn);
         if (bStateOn) {
             int wfdState = status.getActiveDisplayState();
-            Log.d("@M_" + TAG, "handleWfdStatusChanged wfdState: " + wfdState);
+            Logcat.d("@M_" + TAG, "handleWfdStatusChanged wfdState: " + wfdState);
             handleWfdStateChanged(wfdState, isSinkMode());
         } else {
             handleWfdStateChanged(
@@ -211,6 +212,7 @@ public class WfdChangeResolution {
         }
     }
     private void handleWfdStateChanged(int wfdState, boolean sinkMode) {
+        Logcat.d("@M_" + TAG, "handleWfdStateChanged wfdState: " + wfdState+" sinkMode: " + sinkMode);
         switch (wfdState) {
         case WifiDisplayStatus.DISPLAY_STATE_NOT_CONNECTED:
             if (!sinkMode) {

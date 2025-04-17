@@ -1,35 +1,61 @@
 package com.peihua.miracastdemo
 
 import android.app.Activity
+import android.content.Context
+import android.view.Surface
+import com.peihua.miracastdemo.utils.Logcat
 
 class WifiSinkDisplayManager() {
     val callbacks = mutableListOf<ReceiverApiModel.() -> Unit>()
-    val callback: ReceiverApiModel.() -> Unit = {
-        callbacks.forEach {
-            val api = ReceiverApiModel().apply(it)
-            onChangeStatus {
-                api.invokeOnChangeStatus(it)
+    val apiModel: ReceiverApiModel.() -> Unit = {
+        onConnection {
+            callbacks.forEach { api ->
+                val apiModel = ReceiverApiModel().apply(api)
+                apiModel.invokeOnConnection(it)
             }
-            onChangeUiPortrait {
-                api.invokeOnChangeUiPortrait(it)
+        }
+        onDisconnection {
+            callbacks.forEach { api ->
+                val apiModel = ReceiverApiModel().apply(api)
+                apiModel.invokeOnDisconnection(it)
             }
-            onAddWfdSinkGuide {
-                api.invokeOnAddWfdSinkGuide()
+        }
+        onChangeStatus {
+            callbacks.forEach { api ->
+                val apiModel = ReceiverApiModel().apply(api)
+                apiModel.invokeOnChangeStatus(it)
             }
-            onRequestFullScreen {
-                api.invokeOnRequestFullScreen()
+        }
+        onChangeUiPortrait {
+            callbacks.forEach { api ->
+                val apiModel = ReceiverApiModel().apply(api)
+                apiModel.invokeOnChangeUiPortrait(it)
             }
-            onRefreshed {
-                api.invokeOnRefreshed(it)
+        }
+        onAddWfdSinkGuide {
+            callbacks.forEach { api ->
+                val apiModel = ReceiverApiModel().apply(api)
+                apiModel.invokeOnAddWfdSinkGuide()
+            }
+        }
+        onRequestFullScreen {
+            callbacks.forEach { api ->
+                val apiModel = ReceiverApiModel().apply(api)
+                apiModel.invokeOnRequestFullScreen()
+            }
+        }
+        onRefreshed {
+            callbacks.forEach { api ->
+                val apiModel = ReceiverApiModel().apply(api)
+                apiModel.invokeOnRefreshed(it)
             }
         }
     }
-
-    val mSinkExt: WifiSinkExt by lazy { WifiSinkExt(MiraCastApplication.context, callback) }
-
+    val mSinkExt: WifiSinkExt by lazy { WifiSinkExt(MiraCastApplication.context, apiModel) }
     companion object {
         private const val TAG = "WifiSinkDisplayManager"
         private val instance = WifiSinkDisplayManager()
+
         @JvmStatic
         fun getInstance(): WifiSinkDisplayManager {
             return instance
@@ -44,11 +70,38 @@ class WifiSinkDisplayManager() {
         callbacks.remove(callback)
     }
 
-    fun onStart(activity: Activity) {
-        mSinkExt.onStart(activity)
+    fun onStart(activity: Activity, isEnable: Boolean) {
+        mSinkExt.onStart(activity, isEnable)
     }
 
     fun onStop(activity: Activity) {
         mSinkExt.onStop(activity)
+    }
+
+    fun onRegister(context: Context) {
+        mSinkExt.onRegister(context)
+    }
+
+    fun onUnRegister(context: Context) {
+        mSinkExt.unRegister(context)
+    }
+
+    fun setupWfdSinkConnection(surface: Surface?) {
+        mSinkExt.setupWfdSinkConnection(surface)
+    }
+
+    fun setWfdMode(sink: Boolean) {
+        Logcat.d("Miracast_${TAG}", "setWfdMode $sink")
+        mSinkExt.setWfdMode(sink)
+        Logcat.d("Miracast_${TAG}", "after setWfdMode $sink,isSinkMode: ${mSinkExt.isSinkMode}")
+    }
+
+    fun waitWfdSinkConnection(surface: Surface?) {
+        mSinkExt.waitWfdSinkConnection(surface)
+        Logcat.d("Miracast_${TAG}", "waitWfdSinkConnection $surface")
+    }
+
+    fun disconnectWfdSinkConnection() {
+        mSinkExt.disconnectWfdSinkConnection()
     }
 }
