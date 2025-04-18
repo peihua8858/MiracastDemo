@@ -38,20 +38,20 @@
     <string name="copyable_slice_toast" msgid="1008251852798990606">"<xliff:g id="COPY_CONTENT">%1$s</xliff:g>已复制到剪贴板。"</string>
 
 
-    <string name="wifi_display_operating_channel" translatable="false">Operating channel</string>
-    <string name="wifi_display_listen_channel" translatable="false">Listen channel</string>
-    <string name="wifi_display_wps_config" translatable="false">WPS configuration</string>
-    <string name="wifi_display_autonomous_go" translatable="false">Enable autonomous GO</string>
-    <string name="wifi_display_listen_mode" translatable="false">Enable listen mode</string>
-    <string name="wifi_display_session_info" translatable="false">Session info</string>
-    <string name="wifi_display_certification_heading" translatable="false">Certification</string>
-    <string name="wifi_display_options_title">Wireless display options</string>
+    <string name="wifi_display_operating_channel" translatable="false">操作通道</string>
+    <string name="wifi_display_listen_channel" translatable="false">监听频道</string>
+    <string name="wifi_display_wps_config" translatable="false">WPS配置</string>
+    <string name="wifi_display_autonomous_go" translatable="false">启用自动驾驶</string>
+    <string name="wifi_display_listen_mode" translatable="false">启用收听模式</string>
+    <string name="wifi_display_session_info" translatable="false">会话信息</string>
+    <string name="wifi_display_certification_heading" translatable="false">认证</string>
+    <string name="wifi_display_options_title">无线显示选项</string>
     <!-- Wifi Display settings. Options dialog.  The done button text. [CHAR LIMIT=20] -->
-    <string name="wifi_display_options_done">Done</string>
+    <string name="wifi_display_options_done">完毕</string>
     <!-- Wifi Display settings. Options dialog.  The forget button text. [CHAR LIMIT=20] -->
-    <string name="wifi_display_options_forget">Forget</string>
-    <string name="wifi_display_resume" translatable="false">Resume</string>
-    <string name="wifi_display_pause" translatable="false">Pause</string>
+    <string name="wifi_display_options_forget">忘掉</string>
+    <string name="wifi_display_resume" translatable="false">重新开始</string>
+    <string name="wifi_display_pause" translatable="false">暂停</string>
 
     <string name="help_uri_default" translatable="false"></string>
 

@@ -2,4 +2,7 @@
 <resources>
     <!-- The ratio to use when using the two-pane settings layout -->
     <item name="config_activity_embed_split_ratio" format="float" type="dimen">0.3636</item>
+
+    <dimen name="two_target_pref_small_icon_size">24dp</dimen>
+    <dimen name="two_target_pref_medium_icon_size">32dp</dimen>
 </resources>

@@ -57,7 +57,6 @@ import androidx.preference.PreferenceGroup
 import androidx.preference.PreferenceScreen
 import androidx.preference.PreferenceViewHolder
 import androidx.preference.SwitchPreference
-import androidx.preference.TwoStatePreference
 import com.android.internal.app.MediaRouteDialogPresenter
 import com.android.settingslib.core.lifecycle.ObservablePreferenceFragment
 
@@ -698,11 +697,12 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
         }
     }
 
-    private val mSettingsObserver: ContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-        override fun onChange(selfChange: Boolean, uri: Uri?) {
-            scheduleUpdate(CHANGE_SETTINGS)
+    private val mSettingsObserver: ContentObserver =
+        object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
+                scheduleUpdate(CHANGE_SETTINGS)
+            }
         }
-    }
 
     private val mRouterCallback: MediaRouter.Callback = object : MediaRouter.SimpleCallback() {
         override fun onRouteAdded(router: MediaRouter?, info: MediaRouter.RouteInfo?) {
@@ -741,7 +741,7 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
     private open inner class RoutePreference(
         context: Context,
         private val mRoute: MediaRouter.RouteInfo,
-    ) : TwoStatePreference(context), Preference.OnPreferenceClickListener {
+    ) : TwoTargetPreference(context), Preference.OnPreferenceClickListener {
         init {
             title = mRoute.name
             setSummary(mRoute.description)
@@ -783,8 +783,10 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
         context: Context, route: MediaRouter.RouteInfo,
         private val mDisplay: WifiDisplay,
     ) : RoutePreference(context, route), View.OnClickListener {
-        val secondTargetResId: Int
-            get() = R.layout.preference_widget_gear
+
+        override fun getSecondTargetResId(): Int {
+            return R.layout.preference_widget_gear
+        }
 
         override fun onBindViewHolder(holder: PreferenceViewHolder) {
             super.onBindViewHolder(holder)
