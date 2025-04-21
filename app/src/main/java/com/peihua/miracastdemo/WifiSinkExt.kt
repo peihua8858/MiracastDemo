@@ -47,28 +47,7 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
         override fun onReceive(context: Context?, intent: Intent) {
             val action = intent.action
             Logcat.v("@M_${TAG}", "receive action: $action")
-//            if (action == DisplayManager.ACTION_WIFI_DISPLAY_STATUS_CHANGED) {
-//                val status = mDisplayManager.wifiDisplayStatus
-//                val bStateOn =
-//                    status != null && status.featureState == WifiDisplayStatus.FEATURE_STATE_ON
-//                if (bStateOn) {
-//                    val wfdState = status?.activeDisplayState
-//                    if (wfdState == WifiDisplayStatus.DISPLAY_STATE_CONNECTED) {
-//                        val intent = Intent("mediatek.settings.WFD_SINK_SETTINGS");
-//                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK;
-//                        context?.startActivity(intent)
-//                    }
-//                }
-//            }
-         /*   if (action == WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION) {
-                val p2pInfo =
-                    intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO) as? WifiP2pInfo;
-                if (p2pInfo?.groupFormed == true) {
-                    val intent = Intent("mediatek.settings.WFD_SINK_SETTINGS");
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK;
-                    context?.startActivity(intent)
-                }
-            } else */if (action.equals(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)) {
+            if (action.equals(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)) {
                 val networkInfo =
                     intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO) as NetworkInfo
                 Logcat.d("@M_${TAG}", "networkInfo.isConnected: ${networkInfo.isConnected}")
@@ -168,7 +147,7 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
     val wifiDisplayStatus: WifiDisplayStatus?
         get() = mDisplayManager.wifiDisplayStatus
 
-    fun onStart(activity: Activity,isEnable:Boolean) {
+    fun onStart(activity: Activity, isEnable: Boolean) {
         Logcat.d("@M_${TAG}", "onStart,isEnable: $isEnable");
 //        onStop(activity)
 //        mSurfaceView.holder.addCallback(this)

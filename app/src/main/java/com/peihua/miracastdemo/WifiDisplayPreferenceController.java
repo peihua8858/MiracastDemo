@@ -30,10 +30,11 @@ import androidx.preference.PreferenceScreen;
 import com.android.settings.core.BasePreferenceController;
 import com.android.settingslib.core.lifecycle.events.OnStart;
 import com.android.settingslib.core.lifecycle.events.OnStop;
+import com.peihua.miracastdemo.utils.Logcat;
 
 public class WifiDisplayPreferenceController extends BasePreferenceController implements
         LifecycleObserver, OnStart, OnStop {
-
+  private final static String  TAG = "WifiDisplayPreferenceController";
     private final MediaRouter mRouter;
     private Preference mPreference;
     private WifiManager mWifiManager;
@@ -67,6 +68,7 @@ public class WifiDisplayPreferenceController extends BasePreferenceController im
 
     public WifiDisplayPreferenceController(Context context, String key) {
         super(context, key);
+        Logcat.d("@M_" + TAG, "WifiDisplayPreferenceController");
         mContext = context;
         mRouter = context.getSystemService(MediaRouter.class);
         mRouter.setRouterGroupId(MediaRouter.MIRRORING_GROUP_ID);
@@ -91,6 +93,7 @@ public class WifiDisplayPreferenceController extends BasePreferenceController im
 
     @Override
     public CharSequence getSummary() {
+        Logcat.d("@M_" + TAG, "getSummary");
         CharSequence summary = mContext.getString(R.string.disconnected);
 
         final int routeCount = mRouter.getRouteCount();
@@ -112,11 +115,13 @@ public class WifiDisplayPreferenceController extends BasePreferenceController im
 
     @Override
     public void onStart() {
+        Logcat.d("@M_" + TAG, "onStart");
         mRouter.addCallback(MediaRouter.ROUTE_TYPE_REMOTE_DISPLAY, mRouterCallback);
     }
 
     @Override
     public void onStop() {
+        Logcat.d("@M_" + TAG, "onStop");
         mRouter.removeCallback(mRouterCallback);
     }
 }

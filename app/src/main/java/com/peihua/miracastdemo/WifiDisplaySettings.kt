@@ -82,7 +82,7 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
     private var mWifiDisplayOnSetting = false
     private var mWifiDisplayStatus: WifiDisplayStatus? = null
 
-    private val mEmptyView: TextView? = null
+    private var mEmptyView: TextView? = null
 
     /* certification */
     private var mWifiDisplayCertificationOn = false
@@ -125,8 +125,8 @@ class WifiDisplaySettings : ObservablePreferenceFragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        //        mEmptyView = getView().findViewById(android.R.id.empty);
-//        mEmptyView.setText(R.string.wifi_display_no_devices_found);
+//        mEmptyView = view?.findViewById(android.R.id.empty)
+//        mEmptyView?.setText(R.string.wifi_display_no_devices_found)
 //        setEmptyView(mEmptyView);
     }
 
