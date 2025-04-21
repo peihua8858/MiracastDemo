@@ -152,7 +152,11 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
 //        onStop(activity)
 //        mSurfaceView.holder.addCallback(this)
         setWfdMode(isEnable)
-        registerInnerReceiver()
+        if (isEnable) {
+            registerInnerReceiver()
+        }else{
+            unRegisterInnerReceiver()
+        }
 //        onRegister(activity)
     }
 
@@ -167,7 +171,17 @@ class WifiSinkExt(private val mContext: Context, callback: ReceiverApiModel.() -
             mContext.registerReceiver(mReceiver, filter)
         }
     }
-
+    private fun unRegisterInnerReceiver(){
+        Logcat.d("@M_${TAG}", "unRegisterInnerReceiver");
+        if (FeatureOption.MTK_WFD_SINK_SUPPORT) {
+            Logcat.d("@M_${TAG}", "unRegisterInnerReceiver");
+            try {
+                mContext.unregisterReceiver(mReceiver);
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
     fun onStop(activity: Activity) {
         unRegister(activity)
 //        mSurfaceView.holder.removeCallback(this)
