@@ -365,7 +365,7 @@ class ReceiverApiModel {
         this.onChangeStatus?.invoke(status)
     }
 
-    fun invokeOnChangeUiPortrait(isPortrait: Boolean) {
+   internal fun invokeOnChangeUiPortrait(isPortrait: Boolean) {
         this.onChangeUiPortrait?.invoke(isPortrait)
     }
 
