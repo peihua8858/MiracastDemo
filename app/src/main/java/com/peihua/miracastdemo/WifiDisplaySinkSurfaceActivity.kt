@@ -18,46 +18,17 @@ import com.peihua.miracastdemo.utils.Logcat
 
 @Suppress("DEPRECATION")
 class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callback {
-    //    private val mSinkExt: WifiSinkExt by lazy {
-//        WifiSinkExt(this) {
-//            onRefreshed {
-//                Logcat.d("onRefreshed: $it")
-//                mSurfaceView.refresh(it.width, it.height)
-//            }
-//            onConnection {
-//                Logcat.d("onConnection: $it")
-//            }
-//            onDisconnection {
-//                Logcat.d("onDisconnection: $it")
-//                finish()
-//            }
-//            onChangeStatus {
-//                Logcat.d("onChangeStatus: $it")
-//            }
-//            onChangeUiPortrait {
-//                Logcat.d("onChangeUiPortrait: $it")
-//            }
-//            onRequestFullScreen {
-//                val systemUiVis = window.decorView.systemUiVisibility;
-//                if ((systemUiVis and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0) {
-//                    requestFullScreen(systemUiVis)
-//                }
-//            }
-//        }
-//    }
     private val mSurfaceView: SurfaceView by lazy {
         SurfaceView(this)
-//        mSinkExt.mSurfaceView
     }
-    val contentView by lazy { FrameLayout(this) }
-    val callback: ReceiverApiModel.() -> Unit = {
+    private val contentView by lazy { WfdSinkLayout(this) }
+    private val callback: WifiSinkApiModel.() -> Unit = {
         onRefreshed {
             Logcat.d("onRefreshed: $it")
             mSurfaceView.refresh(it.width, it.height)
         }
         onConnection {
             Logcat.d("onConnection: $it")
-            setupWfdSinkConnection()
         }
         onDisconnection {
             Logcat.d("onDisconnection: $it")
@@ -97,20 +68,8 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         }
     }
 
-    fun setupWfdSinkConnection() {
-//        addSurfaceView()
-//        mSinkExt.waitWfdSinkConnection(mSurfaceView.holder.surface)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val bundle = intent.extras ?: Bundle()
-        val width = bundle.getInt("width", 1920)
-        val height = bundle.getInt("height", 1080)
-        Logcat.d("onCreate: [$width, $height]")
-//        set1Px()
-        setMathParent()
-//        mSurfaceView.refresh(width, height)
         contentView.setBackgroundColor(Color.BLACK)
         contentView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         setContentView(contentView)
@@ -121,30 +80,6 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         addSurfaceView()
         mSurfaceView.holder.addCallback(this)
         WifiSinkDisplayManager.getInstance().register(callback)
-        WifiSinkDisplayManager.getInstance().onRegister(this)
-//        mSinkExt.onStart(this)
-//
-//        mSinkExt.handleWfdStatusChanged(mSinkExt.wifiDisplayStatus, this)
-//        mSinkExt.onRegister(this)
-    }
-
-    private fun set1Px() {
-        val window = window
-        window.setGravity(Gravity.START or Gravity.TOP)
-        val params = window.attributes
-        params.x = 0
-        params.y = 0
-        params.height = 1
-        params.width = 1
-        window.attributes = params
-    }
-
-    private fun setMathParent() {
-        val window = window
-        val params = window.attributes
-        params.height = LayoutParams.MATCH_PARENT
-        params.width = LayoutParams.MATCH_PARENT
-        window.attributes = params
     }
 
     private fun addSurfaceView() {
@@ -161,12 +96,15 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         window.clearFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
-//        mSinkExt.onStop(this)
         mSurfaceView.holder.removeCallback(this)
         WifiSinkDisplayManager.getInstance().unRegister(callback)
-        WifiSinkDisplayManager.getInstance().onUnRegister(this)
-//        WifiSinkDisplayManager.getInstance().onStop(this)
-        restoreOrientation();
+        disconnect()
+        restoreOrientation()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        disconnect()
     }
 
     /**
@@ -186,9 +124,6 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
     }
 
     fun SurfaceView.refresh(width: Int, height: Int) {
-        if (width > 0 && height > 0) {
-            setMathParent()
-        }
         val size = Point()
         windowManager.defaultDisplay.getRealSize(size)
         val wm_width = size.x
@@ -209,7 +144,7 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         mSurfaceShowing = false;
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder?) {
+    override fun surfaceCreated(holder: SurfaceHolder) {
         Logcat.d("@M_${TAG}", "surfaceCreated")
         if (holder != null/* && mSinkExt.isSinkMode*/) {
             if (!mSurfaceShowing) {
@@ -220,7 +155,7 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
     }
 
     override fun surfaceChanged(
-        holder: SurfaceHolder?,
+        holder: SurfaceHolder,
         format: Int,
         width: Int,
         height: Int,
@@ -232,7 +167,7 @@ class WifiDisplaySinkSurfaceActivity : AppCompatActivity(), SurfaceHolder.Callba
         }
     }
 
-    override fun surfaceDestroyed(holder: SurfaceHolder?) {
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
         Logcat.d("@M_${TAG}", "surfaceDestroyed")
         disconnect()
     }
